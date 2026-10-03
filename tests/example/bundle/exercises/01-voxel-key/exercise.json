@@ -1,0 +1,12 @@
+{
+  "id": "01-voxel-key",
+  "title": "Compute voxel keys",
+  "function": "voxel_key",
+  "prompt": "Return the integer `(i, j, k)` index of the voxel of edge `size` that contains `point`. Points on the negative side of an axis must not share a voxel with points on the positive side, and a non-positive `size` must raise `ValueError`.",
+  "difficulty": "easy",
+  "hints": [
+    "Divide each coordinate by size.",
+    "What is int(-0.5)? What is math.floor(-0.5)?"
+  ],
+  "source_ref": "src/gridsnap/snap.py:24-33"
+}

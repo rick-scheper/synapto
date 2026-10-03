@@ -1,0 +1,71 @@
+{
+  "questions": [
+    {
+      "id": "q1",
+      "prompt": "Why does voxel_key use math.floor instead of int() to turn x / size into an index?",
+      "options": [
+        { "id": "a", "text": "math.floor is faster than int() on floats." },
+        { "id": "b", "text": "int() truncates toward zero, so -0.5 and 0.5 would land in the same voxel." },
+        { "id": "c", "text": "int() raises an error on negative numbers." },
+        { "id": "d", "text": "math.floor rounds to the nearest integer, which centres the voxels." }
+      ],
+      "correct": "b",
+      "explanation": "int() truncates toward zero, so the voxel around the origin would be twice as wide as the others. floor rounds toward minus infinity, which keeps every voxel the same size.",
+      "concept": "floor division",
+      "source_ref": "src/gridsnap/snap.py:33"
+    },
+    {
+      "id": "q2",
+      "prompt": "With voxel size 1.0, which of these points share a voxel with (0.2, 0.2, 0.2)?",
+      "options": [
+        { "id": "a", "text": "(0.9, 0.9, 0.9)" },
+        { "id": "b", "text": "(-0.2, 0.2, 0.2)" },
+        { "id": "c", "text": "(1.0, 0.2, 0.2)" }
+      ],
+      "correct": "a",
+      "explanation": "Both have key (0, 0, 0). (-0.2, …) floors to -1 on x, and x = 1.0 floors to 1.",
+      "concept": "voxel grid"
+    },
+    {
+      "id": "q3",
+      "prompt": "What does downsample return for a voxel that contains three points?",
+      "options": [
+        { "id": "a", "text": "The first of the three points." },
+        { "id": "b", "text": "The centre of the voxel." },
+        { "id": "c", "text": "The centroid (average) of the three points." },
+        { "id": "d", "text": "All three points, unchanged." }
+      ],
+      "correct": "c",
+      "explanation": "The dict accumulates the coordinate sums and a count, and each output point is sums / count: the centroid, which can lie anywhere inside the voxel.",
+      "concept": "voxel grid",
+      "source_ref": "src/gridsnap/snap.py:36-45"
+    },
+    {
+      "id": "q4",
+      "prompt": "What happens if you call downsample with size 0?",
+      "options": [
+        { "id": "a", "text": "It returns the input unchanged." },
+        { "id": "b", "text": "voxel_key raises ValueError before any division happens." },
+        { "id": "c", "text": "Python raises ZeroDivisionError inside math.floor." },
+        { "id": "d", "text": "Every point ends up in one voxel." }
+      ],
+      "correct": "b",
+      "explanation": "voxel_key checks size <= 0 first and raises a ValueError with a clear message, rather than letting x / 0 fail with a less helpful ZeroDivisionError.",
+      "concept": "voxel grid",
+      "source_ref": "src/gridsnap/snap.py:30-31"
+    },
+    {
+      "id": "q5",
+      "prompt": "Why does the implementation group points with a dict rather than sorting them by voxel key?",
+      "options": [
+        { "id": "a", "text": "Sorting would give a different, wrong result." },
+        { "id": "b", "text": "A dict is one O(n) pass with no copy of the points; sorting is O(n log n)." },
+        { "id": "c", "text": "Tuples can't be sorted in Python." },
+        { "id": "d", "text": "Dicts use less memory than a list of points." }
+      ],
+      "correct": "b",
+      "explanation": "Both give the same centroids. The dict avoids an O(n log n) sort and an extra copy; its cost is memory per occupied voxel (see decisions).",
+      "concept": "spatial hashing"
+    }
+  ]
+}

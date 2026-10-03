@@ -131,3 +131,20 @@ def venv_root(python: Path) -> Path | None:
     """The venv directory that ``python`` belongs to, or None for a non-venv interpreter."""
     root = python.parent.parent
     return root if (root / "pyvenv.cfg").is_file() else None
+
+
+def project_env(python: Path) -> dict[str, str]:
+    """Our environment, made to look like ``python``'s venv is active.
+
+    Used for kernels and pytest runs, so that e.g. ``!pip install x`` in a cell
+    installs into the project venv, not into debrief's.
+    """
+    env = os.environ.copy()
+    env.pop("PYTHONHOME", None)
+    root = venv_root(python)
+    if root is not None:
+        env["VIRTUAL_ENV"] = str(root)
+        env["PATH"] = os.pathsep.join([str(python.parent), env.get("PATH", "")])
+    else:
+        env.pop("VIRTUAL_ENV", None)
+    return env

@@ -1,0 +1,12 @@
+{
+  "id": "02-downsample",
+  "title": "Downsample a cloud",
+  "function": "downsample",
+  "prompt": "Replace the points in each occupied voxel by their centroid. Keep the voxels in the order their first point appears. `voxel_key` is already imported for you.",
+  "difficulty": "medium",
+  "hints": [
+    "Use a dict keyed by voxel_key to collect what you need per voxel.",
+    "You don't need to keep the points: running sums and a count are enough."
+  ],
+  "source_ref": "src/gridsnap/snap.py:36-45"
+}

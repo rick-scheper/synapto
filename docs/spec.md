@@ -180,6 +180,8 @@ The bundle is the contract between the skill and the hub. Nothing else crosses t
 
 - `source.files[].sha256` lets the hub show a "code has changed since this lesson" banner when the repo has moved on.
 - `data_slots[].kind` is one of `file`, `dir`, `string` or `number`. A `default` must point inside the bundle (a fixture) or be a literal value.
+- `difficulty` is one of `beginner`, `intermediate` or `advanced`. `created_at` must include a timezone. `environment.python`, `environment.cwd` and `source.repo_path` are absolute paths; `source.files[].path` and `extra_sys_path` entries are relative.
+- Unknown fields are errors in every JSON file, so a misspelt key is caught rather than ignored.
 
 ### 5.2 `explanation.md`
 
@@ -232,6 +234,8 @@ A standard nbformat 4 notebook, so it renders on GitHub and opens in Jupyter or 
 | `function` | the source of one function from the build, copied verbatim so the learner sees and can edit it |
 | `demo` | a call to the function on fixture or real data, printing or plotting intermediate results |
 | `explain` | a short markdown cell placed between code cells |
+
+Every cell needs `metadata.debrief.role`. `explain` cells are markdown cells; the other roles are code cells. A `function` cell also needs `function` and `source_ref`, and must contain a top-level `def <function>`.
 
 **Dissection rules:**
 
@@ -289,6 +293,7 @@ There are 5–10 questions. They test understanding (why, what happens if, which
 }
 ```
 
+- The folder name equals `exercise.json`'s `id`. `difficulty` is one of `easy`, `medium` or `hard`.
 - `stub.py`: the same signature, type hints and docstring as the original, with the body `raise NotImplementedError`. Imports needed by the solution are kept.
 - `solution.py`: the reference implementation, normally identical to the built code.
 - `test_exercise.py`: pytest tests that import with `from candidate import <function>`. They cover normal behaviour and at least one edge case taken from the real code's handling.
@@ -334,7 +339,15 @@ The store location is `~/.debrief`. It can be overridden with `DEBRIEF_HOME`.
 - **References:** a `source_ref` points to a file not listed in `source.files`, or a `diagrams/` file referenced in Markdown is missing.
 - **Size:** `fixtures/` is over 5 MB.
 
-Warnings (they don't fail validation): a Mermaid block fails to parse (checked if `mmdc` is installed), or a cell takes more than 30 seconds to run.
+Also checked, because they make errors easier to act on:
+
+- **Exercises (static):** the folder count is 1–3; each has all four files; `stub.py` and `solution.py` define `function` with identical signatures; `test_exercise.py` imports from `candidate`; `stub.py` is importable when the tests run.
+- **Data slots:** a `file` or `dir` default exists in the bundle.
+- **Markdown:** `explanation.md` and `decisions.md` aren't empty.
+
+Warnings (they don't fail validation): a Mermaid block fails to parse (checked if `mmdc` is installed), a cell takes more than 30 seconds to run, or a single test passes against `stub.py` (while others fail).
+
+The validator reports every issue it can find in one run. Cells run in order and execution stops at the first failing cell. The notebook and exercises run only when `lesson.json` is valid and its environment is usable; otherwise the CLI says they were skipped.
 
 ## 9. Server
 

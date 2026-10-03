@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "2026-10-03-voxel-downsampling",
+  "title": "Voxel downsampling",
+  "summary": "gridsnap thins a point cloud by snapping points to a voxel grid and keeping the centroid of each occupied voxel.",
+  "created_at": "2026-10-03T11:20:00+02:00",
+  "difficulty": "beginner",
+  "concepts": ["voxel grid", "floor division", "spatial hashing"],
+  "prerequisites": ["python dicts"],
+  "source": {
+    "repo_path": "/path/to/gridsnap",
+    "remote": null,
+    "branch": "main",
+    "base_commit": "a1b2c3d",
+    "head_commit": "e4f5a6b",
+    "includes_uncommitted": false,
+    "files": [
+      { "path": "src/gridsnap/snap.py", "sha256": "e9c851b421b61da58e7994ee25fc42bc5a5f1c7a043b2b0193a664f0d7cdbfb9" }
+    ]
+  },
+  "environment": {
+    "python": "/path/to/gridsnap/.venv/bin/python",
+    "python_version": "3.12.3",
+    "cwd": "/path/to/gridsnap",
+    "extra_sys_path": ["src"]
+  },
+  "data_slots": [
+    {
+      "name": "points",
+      "kind": "file",
+      "description": "An .xyz point cloud: one 'x y z' line per point.",
+      "default": "fixtures/points.xyz",
+      "required": false
+    },
+    {
+      "name": "voxel_size",
+      "kind": "number",
+      "description": "Edge length of a voxel, in the cloud's units.",
+      "default": 1.0
+    }
+  ]
+}

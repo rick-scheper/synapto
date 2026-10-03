@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import asyncio
 import math
-import os
 import queue
 import time
 from collections.abc import AsyncIterator, Callable, Mapping
@@ -39,7 +38,7 @@ from jupyter_client.kernelspec import KernelSpec
 from jupyter_client.manager import AsyncKernelManager
 from traitlets import Unicode
 
-from debrief.environment import check_interpreter, interpreter_path, venv_root
+from debrief.environment import check_interpreter, interpreter_path, project_env
 
 KernelEvent = dict[str, Any]
 DataValue = str | int | float
@@ -105,22 +104,6 @@ def build_preamble(config: KernelConfig) -> str:
             f"DEBRIEF_LESSON_DIR = {str(config.lesson_dir)!r}",
         ]
     )
-
-
-def kernel_env(python: Path) -> dict[str, str]:
-    """The environment for the kernel process: ours, made to look like the project venv is active.
-
-    That way ``!pip install x`` in a cell installs into the project venv, not into debrief's.
-    """
-    env = os.environ.copy()
-    env.pop("PYTHONHOME", None)
-    root = venv_root(python)
-    if root is not None:
-        env["VIRTUAL_ENV"] = str(root)
-        env["PATH"] = os.pathsep.join([str(python.parent), env.get("PATH", "")])
-    else:
-        env.pop("VIRTUAL_ENV", None)
-    return env
 
 
 class ProjectKernelManager(AsyncKernelManager):
@@ -211,7 +194,7 @@ class LessonKernel:
             raise KernelStartError(f"environment.cwd {self.config.cwd} is not a directory")
 
         km = ProjectKernelManager(python=str(python), shutdown_wait_time=2.0)
-        await km.start_kernel(cwd=str(self.config.cwd), env=kernel_env(python))
+        await km.start_kernel(cwd=str(self.config.cwd), env=project_env(python))
         kc = km.client()
         kc.start_channels()
         self._km, self._kc = km, kc

@@ -7,6 +7,7 @@ from typing import Annotated
 
 import typer
 
+from debrief.bundle.validator import validate_bundle
 from debrief.environment import check_interpreter, find_project_python
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -15,6 +16,31 @@ app = typer.Typer(no_args_is_help=True, add_completion=False)
 @app.callback()
 def main() -> None:
     """Turn what your coding agent just built into an interactive lesson."""
+
+
+@app.command()
+def validate(
+    bundle: Annotated[Path, typer.Argument(help="The lesson bundle folder to check.")],
+) -> None:
+    """Check a lesson bundle: schemas, references, notebook execution and exercise tests.
+
+    Prints one issue per line as file:location: message. Exit code 0 means valid.
+    """
+    report = validate_bundle(bundle)
+    for issue in report.issues:
+        typer.echo(str(issue))
+
+    n_errors, n_warnings = len(report.errors), len(report.warnings)
+    warnings = f"{n_warnings} warning{'s' * (n_warnings != 1)}"
+    if report.ok:
+        gap = "\n" if report.issues else ""
+        typer.echo(f"{gap}{bundle}: valid" + (f" ({warnings})" if n_warnings else ""))
+        return
+    if not report.executed:
+        typer.echo("\nThe notebook and exercise tests were not run: lesson.json or its "
+                   "environment has errors. Fix those first.")
+    typer.echo(f"\n{bundle}: {n_errors} error{'s' * (n_errors != 1)}, {warnings}")
+    raise typer.Exit(1)
 
 
 @app.command()

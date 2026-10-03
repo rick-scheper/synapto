@@ -5,6 +5,9 @@ from pathlib import Path
 
 import pytest
 
+# The example bundle's test_exercise.py files run against candidate.py via debrief validate.
+collect_ignore = ["example"]
+
 
 def _make_venv(root: Path) -> tuple[Path, Path]:
     subprocess.run([sys.executable, "-m", "venv", "--without-pip", str(root)], check=True)
