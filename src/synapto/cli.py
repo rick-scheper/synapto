@@ -61,10 +61,29 @@ def publish(
 
 
 @app.command()
+def remove(
+    lesson_id: Annotated[str, typer.Argument(metavar="ID", help="The id of the lesson to delete.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Don't ask for confirmation.")] = False,
+) -> None:
+    """Delete a published lesson and all progress recorded for it."""
+    store = LessonStore.default()
+    if not store.exists(lesson_id):
+        typer.echo(f"error: no lesson {lesson_id!r} in {store.lessons_dir}", err=True)
+        raise typer.Exit(1)
+    if not yes:
+        typer.confirm(f"Delete lesson {lesson_id!r} and its progress? This can't be undone", abort=True)
+    store.remove(lesson_id)
+    typer.echo(f"Removed {lesson_id}")
+
+
+@app.command()
 def serve(
     port: Annotated[int, typer.Option(help="Port on 127.0.0.1 to serve the hub on.")] = DEFAULT_PORT,
     open_browser: Annotated[
         bool, typer.Option("--open", help="Open the hub in the browser once it's up.")
+    ] = False,
+    reload: Annotated[
+        bool, typer.Option("--reload", help="Stop the hub already running on this port, then start a new one.")
     ] = False,
 ) -> None:
     """Start the hub on 127.0.0.1 (the only interface it binds to)."""
@@ -75,11 +94,57 @@ def serve(
 
     from synapto.server.app import create_app
 
+    if reload:
+        stop_running_hub(port)
+    elif _port_in_use(port):
+        typer.echo(f"error: port {port} is in use, probably by a running hub. "
+                   "Restart it with --reload, or pick another --port.", err=True)
+        raise typer.Exit(1)
+
+    def stop() -> None:
+        server.should_exit = True
+
+    server = uvicorn.Server(uvicorn.Config(create_app(stop=stop), host="127.0.0.1", port=port,
+                                           log_level="warning"))
     url = f"http://127.0.0.1:{port}/"
     if open_browser:
         threading.Timer(1.0, webbrowser.open, (url,)).start()
     typer.echo(f"Synapto hub: {url}")
-    uvicorn.run(create_app(), host="127.0.0.1", port=port, log_level="warning")
+    server.run()
+
+
+def stop_running_hub(port: int, timeout: float = 15.0) -> None:
+    """Ask the hub on ``port`` to shut down and wait until the port is free.
+
+    Does nothing if nothing is listening there.
+    """
+    import time
+    import urllib.error
+    import urllib.request
+
+    url = f"http://127.0.0.1:{port}/api/shutdown"
+    try:
+        urllib.request.urlopen(urllib.request.Request(url, method="POST"), timeout=5).close()
+    except urllib.error.HTTPError as exc:
+        typer.echo(f"error: whatever is on port {port} can't be stopped with --reload (HTTP {exc.code}). "
+                   "A hub started before --reload existed has to be stopped by hand (Ctrl+C).", err=True)
+        raise typer.Exit(1) from None
+    except (urllib.error.URLError, OSError):
+        return  # nothing is running
+    deadline = time.monotonic() + timeout
+    while _port_in_use(port):
+        if time.monotonic() > deadline:
+            typer.echo(f"error: the hub on port {port} didn't stop within {timeout:.0f}s.", err=True)
+            raise typer.Exit(1)
+        time.sleep(0.1)
+    typer.echo(f"Stopped the hub on port {port}.")
+
+
+def _port_in_use(port: int) -> bool:
+    import socket
+
+    with socket.socket() as sock:
+        return sock.connect_ex(("127.0.0.1", port)) == 0
 
 
 def lesson_url(lesson_id: str) -> str:

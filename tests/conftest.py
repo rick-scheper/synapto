@@ -54,3 +54,16 @@ def bundle(tmp_path: Path, project_python: Path) -> Path:
     lesson["environment"].update(python=str(project_python), cwd=str(project))
     lesson_json.write_text(json.dumps(lesson, indent=1))
     return bundle
+
+
+@pytest.fixture
+def partial_bundle(bundle: Path) -> Path:
+    """The example bundle with only its explain and quiz parts (ADR-0007)."""
+    lesson_json = bundle / "lesson.json"
+    lesson = json.loads(lesson_json.read_text())
+    lesson.update(parts=["explain", "quiz"], data_slots=[])
+    lesson_json.write_text(json.dumps(lesson, indent=1))
+    (bundle / "decisions.md").unlink()
+    (bundle / "notebook.ipynb").unlink()
+    shutil.rmtree(bundle / "exercises")
+    return bundle

@@ -7,7 +7,7 @@ import type { Decision, Decisions, Lesson, Loaded } from "../api";
 import { Markdown } from "../components/Markdown";
 import { Badge, Button, Callout, Status } from "../components/ui";
 
-export function DecisionsTab({ lesson, decisions }: { lesson: Lesson; decisions: Loaded<Decisions> }) {
+export function DecisionsTab({ lesson, decisions }: { lesson: Lesson; decisions: Loaded<Decisions | undefined> }) {
   if (!decisions.data) return <Status error={decisions.error} />;
   const { decisions: list, note } = decisions.data;
   const n = list.length;

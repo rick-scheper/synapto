@@ -42,7 +42,10 @@ class ExerciseProgress(BaseModel):
 
 class Progress(BaseModel):
     value: float
-    """Answered questions plus passed exercises, as a fraction of all of them (0…1)."""
+    """Answered questions plus passed exercises, as a fraction of all of them (0…1).
+
+    0 for a lesson without a quiz or rebuild part: it has nothing to complete.
+    """
     quiz: QuizProgress
     exercises: ExerciseProgress
 
@@ -94,12 +97,12 @@ def load_exercise(store: LessonStore, lesson_id: str, exercise_id: str) -> Exerc
     return Exercise.model_validate_json(path.read_bytes())
 
 
-def progress(store: LessonStore, lesson_id: str) -> Progress:
+def progress(store: LessonStore, lesson: Lesson) -> Progress:
     """Answered questions and exercises with at least one passing run."""
-    questions = {q.id for q in load_quiz(store, lesson_id).questions}
-    answers = {qid: a for qid, a in store.latest_answers(lesson_id).items() if qid in questions}
-    exercises = exercise_ids(store, lesson_id)
-    runs = store.exercise_runs(lesson_id)
+    questions = {q.id for q in load_quiz(store, lesson.id).questions} if "quiz" in lesson.parts else set()
+    answers = {qid: a for qid, a in store.latest_answers(lesson.id).items() if qid in questions}
+    exercises = exercise_ids(store, lesson.id) if "rebuild" in lesson.parts else []
+    runs = store.exercise_runs(lesson.id)
     passed = sum(any(r.passed for r in runs.get(eid, ())) for eid in exercises)
     total = len(questions) + len(exercises)
     return Progress(
@@ -110,10 +113,10 @@ def progress(store: LessonStore, lesson_id: str) -> Progress:
     )
 
 
-def update_completion(store: LessonStore, lesson_id: str) -> None:
+def update_completion(store: LessonStore, lesson: Lesson) -> None:
     """Record that the lesson is complete once every question is answered and every exercise passed."""
-    if progress(store, lesson_id).value >= 1:
-        store.mark_completed(lesson_id)
+    if progress(store, lesson).value >= 1:
+        store.mark_completed(lesson.id)
 
 
 def summarise(store: LessonStore, lesson: Lesson, opened_at: str | None) -> LessonSummary:
@@ -122,5 +125,5 @@ def summarise(store: LessonStore, lesson: Lesson, opened_at: str | None) -> Less
         created_at=lesson.created_at.isoformat(), difficulty=lesson.difficulty,
         concepts=lesson.concepts, repo_path=lesson.source.repo_path,
         branch=lesson.source.branch, head_commit=lesson.source.head_commit,
-        progress=progress(store, lesson.id), staleness=staleness(lesson), opened_at=opened_at,
+        progress=progress(store, lesson), staleness=staleness(lesson), opened_at=opened_at,
     )

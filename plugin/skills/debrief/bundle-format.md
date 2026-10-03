@@ -2,16 +2,18 @@
 
 `synapto validate` enforces every **must** below. Unknown JSON fields are errors, so copy key names exactly.
 
+`lesson.json` is always there. Every other file belongs to a part, and is in the bundle exactly when its part is in `lesson.json` `parts`. A missing file of a listed part and a file of an unlisted part are both errors.
+
 ```
 <lesson-id>/
-├── lesson.json            metadata, source, environment, data slots
-├── explanation.md         the narrative, with at least one diagram
-├── decisions.md           architectural decisions, or one line saying there were none
+├── lesson.json            always: metadata, parts, source, environment, data slots
+├── explanation.md         explain: the narrative, with at least one diagram
+├── decisions.md           decisions: architectural decisions, or one line saying there were none
 ├── diagrams/              optional: .svg / .mmd files referenced from the Markdown
-├── notebook.ipynb         the key functions, dissected and runnable
-├── fixtures/              optional: small sample inputs, ≤ 5 MB in total
-├── quiz.json              5–10 questions
-└── exercises/             1–3 exercises
+├── notebook.ipynb         notebook: the key functions, dissected and runnable
+├── fixtures/              notebook, optional: small sample inputs, ≤ 5 MB in total
+├── quiz.json              quiz: 5–10 questions
+└── exercises/             rebuild: 1–3 exercises
     └── 01-<slug>/
         ├── exercise.json
         ├── stub.py
@@ -31,6 +33,7 @@
   "difficulty": "intermediate",
   "concepts": ["voxel grid", "spatial hashing"],
   "prerequisites": ["python dicts"],
+  "parts": ["explain", "decisions", "notebook", "quiz", "rebuild"],
   "source": {
     "repo_path": "/abs/path/to/repo",
     "remote": "https://github.com/me/repo",
@@ -59,11 +62,12 @@
 ```
 
 - `id` is `<today's date>-<kebab-slug>`; the bundle folder has the same name.
+- `parts`: the parts the developer chose, from `explain`, `decisions`, `notebook`, `quiz` and `rebuild`, in that order.
 - `created_at` has a timezone. `difficulty`: `beginner`, `intermediate` or `advanced`.
 - `remote`, `branch`, `base_commit`, `head_commit` may be `null`.
 - `source.files` lists every file that any `source_ref` points into, with the sha256 of its current contents (`sha256sum`, or `shasum -a 256` on macOS). Paths are relative to `repo_path`.
 - `environment` comes from `synapto doctor`. `cwd` is usually the repo root. `extra_sys_path` holds directories, relative to `cwd`, that must be importable — `["src"]` for a src layout the venv doesn't already install, `[]` otherwise.
-- `data_slots[].kind`: `file`, `dir`, `string` or `number`. A `file`/`dir` default is a path inside the bundle (a fixture); a `number` default is a JSON number.
+- `data_slots` feed the notebook; without the `notebook` part, leave it `[]`. `data_slots[].kind`: `file`, `dir`, `string` or `number`. A `file`/`dir` default is a path inside the bundle (a fixture); a `number` default is a JSON number.
 
 ## explanation.md
 
@@ -75,7 +79,7 @@ GitHub-flavoured Markdown, in this order:
 4. **How it fits in the codebase** — callers, data flow, files touched.
 5. **Things to watch** — edge cases, performance, known limitations.
 
-Diagrams go in ```` ```mermaid ```` fences, or as `![](diagrams/x.svg)` with the file present. Cite code as `path:start-end` (e.g. `src/pkg/snap.py:24-33`), matching the `source_ref` of the notebook cell it refers to.
+Diagrams go in ```` ```mermaid ```` fences, or as `![](diagrams/x.svg)` with the file present. Cite code as `path:start-end` (e.g. `src/pkg/snap.py:24-33`), matching the `source_ref` of the notebook cell it refers to when there is a notebook.
 
 ## decisions.md
 

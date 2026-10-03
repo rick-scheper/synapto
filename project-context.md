@@ -38,12 +38,13 @@ Current decisions:
 | 0004 | Exercises are graded with **pytest in a subprocess** using the project's interpreter |
 | 0005 | The web UI is a **React + Vite + TypeScript** single-page app, built into `src/synapto/web/` |
 | 0006 | The project is **Synapto**: CLI, import package and plugin `synapto`; PyPI distribution **`synapto-hub`** |
+| 0007 | The developer picks a lesson's **parts** at `/debrief` time; `lesson.json` `parts` lists them and only their files are in the bundle |
  
 Still open (they need an ADR before the milestone that depends on them): how lesson updates are versioned, and cross-lesson concept tracking.
  
 ## Core architecture in one paragraph
  
-The **lesson bundle** (a folder with `lesson.json`, `explanation.md`, `decisions.md`, `notebook.ipynb`, `fixtures/`, `quiz.json` and `exercises/`) is the only contract between the skill and the hub. The `/debrief` skill writes a bundle to a temporary directory, then runs `synapto validate`, which executes the notebook in a fresh kernel and checks that the exercise tests **pass on `solution.py` and fail on `stub.py`**. It fixes errors and re-runs, up to 5 attempts, then runs `synapto publish`, which copies the bundle into `~/.synapto/lessons/<id>/` and indexes it. A FastAPI server (`synapto serve`) serves the web UI, starts kernels in the project venv, runs pytest for exercises, and stores everything the learner changes in SQLite. **Published bundles are immutable.**
+The **lesson bundle** (a folder with `lesson.json`, plus `explanation.md`, `decisions.md`, `notebook.ipynb`, `fixtures/`, `quiz.json` and `exercises/` for the parts the developer chose) is the only contract between the skill and the hub. The `/debrief` skill writes a bundle to a temporary directory, then runs `synapto validate`, which executes the notebook in a fresh kernel and checks that the exercise tests **pass on `solution.py` and fail on `stub.py`**. It fixes errors and re-runs, up to 5 attempts, then runs `synapto publish`, which copies the bundle into `~/.synapto/lessons/<id>/` and indexes it. A FastAPI server (`synapto serve`) serves the web UI, starts kernels in the project venv, runs pytest for exercises, and stores everything the learner changes in SQLite. **Published bundles are immutable.**
  
 ## Repository layout
  

@@ -17,7 +17,7 @@ import asyncio
 import json
 import re
 from collections import Counter
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Callable, Sequence
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -32,7 +32,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 import synapto
 from synapto.bundle.decisions import Decisions, parse_decisions
-from synapto.bundle.models import Exercise, Lesson
+from synapto.bundle.models import Exercise, Lesson, Part
 from synapto.server.lessons import (
     LessonSummary,
     Progress,
@@ -198,7 +198,9 @@ def create_app(
     web_dir: Path = WEB_DIR,
     pool: KernelPool | None = None,
     allowed_hosts: Sequence[str] = LOCAL_HOSTS,
+    stop: Callable[[], None] | None = None,
 ) -> FastAPI:
+    """The hub's app. ``stop``, if given, makes ``POST /api/shutdown`` stop the server."""
     store = store or LessonStore.default()
     pool = pool or KernelPool()
 
@@ -220,6 +222,12 @@ def create_app(
             raise HTTPException(404, f"no lesson {lesson_id!r}")
         return store.load(lesson_id)
 
+    def part_or_404(lesson_id: str, part: Part) -> Lesson:
+        lesson = lesson_or_404(lesson_id)
+        if part not in lesson.parts:
+            raise HTTPException(404, f"lesson {lesson_id!r} has no {part} part")
+        return lesson
+
     def summaries(repo: str | None = None) -> list[LessonSummary]:
         opened = store.opened_at()
         return [summarise(store, store.load(i), opened.get(i)) for i in store.lesson_ids(repo)]
@@ -237,12 +245,18 @@ def create_app(
         store.mark_opened(lesson_id)
         answers = {qid: AnswerRecord(option_id=a.option_id, correct=a.correct)
                    for qid, a in store.latest_answers(lesson_id).items()}
-        return LessonDetail(lesson=lesson, progress=progress(store, lesson_id),
+        return LessonDetail(lesson=lesson, progress=progress(store, lesson),
                             staleness=staleness(lesson), answers=answers)
+
+    @app.delete("/api/lessons/{lesson_id}", status_code=204)
+    async def delete_lesson(lesson_id: str) -> None:
+        lesson_or_404(lesson_id)
+        await pool.shutdown(lesson_id)
+        store.remove(lesson_id)
 
     @app.get("/api/lessons/{lesson_id}/decisions")
     def get_decisions(lesson_id: str) -> Decisions:
-        lesson_or_404(lesson_id)
+        part_or_404(lesson_id, "decisions")
         return parse_decisions((store.lesson_dir(lesson_id) / "decisions.md").read_text(encoding="utf-8"))
 
     @app.get("/api/lessons/{lesson_id}/files/{path:path}")
@@ -256,7 +270,7 @@ def create_app(
 
     @app.post("/api/lessons/{lesson_id}/quiz/{question_id}/answer")
     def answer(lesson_id: str, question_id: str, body: AnswerRequest) -> AnswerResult:
-        lesson_or_404(lesson_id)
+        lesson = part_or_404(lesson_id, "quiz")
         question = next((q for q in load_quiz(store, lesson_id).questions if q.id == question_id), None)
         if question is None:
             raise HTTPException(404, f"no question {question_id!r} in lesson {lesson_id!r}")
@@ -264,11 +278,11 @@ def create_app(
             raise HTTPException(422, f"question {question_id!r} has no option {body.option_id!r}")
         correct = body.option_id == question.correct
         store.record_answer(lesson_id, question_id, body.option_id, correct)
-        update_completion(store, lesson_id)
+        update_completion(store, lesson)
         return AnswerResult(correct=correct, correct_option=question.correct, explanation=question.explanation)
 
     def exercise_or_404(lesson_id: str, exercise_id: str) -> tuple[Lesson, Path]:
-        lesson = lesson_or_404(lesson_id)
+        lesson = part_or_404(lesson_id, "rebuild")
         if exercise_id not in exercise_ids(store, lesson_id):
             raise HTTPException(404, f"no exercise {exercise_id!r} in lesson {lesson_id!r}")
         return lesson, store.lesson_dir(lesson_id) / "exercises" / exercise_id
@@ -278,7 +292,7 @@ def create_app(
 
     @app.get("/api/lessons/{lesson_id}/exercises")
     def list_exercises(lesson_id: str) -> list[ExerciseState]:
-        lesson_or_404(lesson_id)
+        part_or_404(lesson_id, "rebuild")
         runs = store.exercise_runs(lesson_id)
         states = []
         for eid in exercise_ids(store, lesson_id):
@@ -298,7 +312,7 @@ def create_app(
         store.save_draft(lesson_id, exercise_id, body.code)
         run = store.record_run(lesson_id, exercise_id, body.code, outcome.passed,
                                outcome.n_passed, len(outcome.results))
-        update_completion(store, lesson_id)
+        update_completion(store, lesson)
         return RunResult(
             **run_record(run).model_dump(),
             tests=[TestCaseResult(name=r.name, status=r.status, message=r.message) for r in outcome.results],
@@ -328,12 +342,12 @@ def create_app(
 
     @app.get("/api/lessons/{lesson_id}/notebook")
     def get_notebook(lesson_id: str) -> NotebookState:
-        lesson_or_404(lesson_id)
+        part_or_404(lesson_id, "notebook")
         return notebook_state(lesson_id)
 
     @app.put("/api/lessons/{lesson_id}/notebook")
     def put_notebook(lesson_id: str, body: NotebookUpdate) -> NotebookState:
-        lesson_or_404(lesson_id)
+        part_or_404(lesson_id, "notebook")
         try:
             ipynb_json = parse_notebook(body.notebook)
         except ValueError as exc:
@@ -343,18 +357,18 @@ def create_app(
 
     @app.post("/api/lessons/{lesson_id}/notebook/reset")
     def reset_notebook(lesson_id: str) -> NotebookState:
-        lesson_or_404(lesson_id)
+        part_or_404(lesson_id, "notebook")
         store.delete_notebook_copy(lesson_id)
         return notebook_state(lesson_id)
 
     @app.get("/api/lessons/{lesson_id}/data-slots")
     def get_data_slots(lesson_id: str) -> list[SlotState]:
-        lesson = lesson_or_404(lesson_id)
+        lesson = part_or_404(lesson_id, "notebook")
         return slot_states(lesson, store.data_slot_values(lesson_id))
 
     @app.put("/api/lessons/{lesson_id}/data-slots")
     def put_data_slots(lesson_id: str, body: SlotValues) -> list[SlotState]:
-        lesson = lesson_or_404(lesson_id)
+        lesson = part_or_404(lesson_id, "notebook")
         values, errors = check_slot_values(lesson, body.values)
         if errors:
             raise HTTPException(422, {"message": "Some data slot values can't be used", "errors": errors})
@@ -362,7 +376,7 @@ def create_app(
         return slot_states(lesson, values)
 
     def kernel_config(lesson_id: str) -> KernelConfig:
-        lesson = lesson_or_404(lesson_id)
+        lesson = part_or_404(lesson_id, "notebook")
         states = slot_states(lesson, store.data_slot_values(lesson_id))
         # A value that has stopped working (e.g. a deleted file) falls back to the default.
         values = {s.name: s.value for s in states if s.value is not None and s.error is None}
@@ -401,12 +415,19 @@ def create_app(
     @app.websocket("/api/lessons/{lesson_id}/kernel/ws")
     async def kernel_socket(ws: WebSocket, lesson_id: str) -> None:
         try:
-            lesson_or_404(lesson_id)
+            part_or_404(lesson_id, "notebook")
         except HTTPException:
-            await ws.close(code=1008, reason=f"no lesson {lesson_id!r}")
+            await ws.close(code=1008, reason=f"no notebook in lesson {lesson_id!r}")
             return
         await ws.accept()
         await serve_kernel_socket(ws, lambda: start_kernel(lesson_id))
+
+    @app.post("/api/shutdown", status_code=202)
+    def shutdown() -> None:
+        # For `synapto serve --reload`. Cross-site pages can't call it (SameOriginMiddleware).
+        if stop is None:
+            raise HTTPException(404, "this hub can't be stopped over HTTP")
+        stop()
 
     @app.get("/api/progress")
     def get_progress() -> Totals:

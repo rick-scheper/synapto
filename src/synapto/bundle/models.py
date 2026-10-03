@@ -50,6 +50,10 @@ def _source_ref(value: str) -> str:
     return value
 
 
+PARTS = ("explain", "decisions", "notebook", "quiz", "rebuild")
+"""The parts a lesson can have, in the order the hub shows them."""
+Part = Literal["explain", "decisions", "notebook", "quiz", "rebuild"]
+
 NonEmptyStr = Annotated[str, AfterValidator(_non_empty)]
 RelativePath = Annotated[str, AfterValidator(_relative_path)]
 AbsolutePath = Annotated[str, AfterValidator(_absolute_path)]
@@ -141,11 +145,15 @@ class Lesson(_Model):
     source: Source
     environment: Environment
     data_slots: list[DataSlot] = []
+    parts: Annotated[list[Part], Field(min_length=1)] = list(PARTS)
+    """The parts the developer chose at ``/debrief`` time; each has its own file(s) in the bundle."""
 
     @model_validator(mode="after")
-    def _unique_slots(self) -> Lesson:
+    def _unique_names(self) -> Lesson:
         if dupes := _duplicates([s.name for s in self.data_slots]):
             raise ValueError(f"data_slots has duplicate names: {', '.join(dupes)}")
+        if dupes := _duplicates(list(self.parts)):
+            raise ValueError(f"parts lists these more than once: {', '.join(dupes)}")
         return self
 
 

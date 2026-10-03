@@ -158,3 +158,76 @@ def test_web_ui_is_served_with_a_client_route_fallback(client: TestClient) -> No
 def test_unbuilt_web_ui_says_how_to_build_it(store: LessonStore, tmp_path: Path) -> None:
     client = TestClient(create_app(store, tmp_path / "missing"), base_url="http://127.0.0.1")
     assert "npm run build" in client.get("/").text
+
+
+def test_a_lesson_only_serves_its_parts(partial_bundle: Path, tmp_path: Path, web_dir: Path) -> None:
+    store = LessonStore(tmp_path / "partial-home")
+    store.publish(partial_bundle, Lesson.model_validate_json((partial_bundle / "lesson.json").read_bytes()))
+    client = TestClient(create_app(store, web_dir), base_url="http://127.0.0.1")
+
+    detail = client.get(f"/api/lessons/{LESSON_ID}").json()
+    assert detail["lesson"]["parts"] == ["explain", "quiz"]
+    assert detail["progress"]["exercises"] == {"passed": 0, "total": 0}
+    for path in ("decisions", "notebook", "data-slots", "exercises"):
+        response = client.get(f"/api/lessons/{LESSON_ID}/{path}")
+        assert response.status_code == 404, path
+
+    for q in quiz(store)["questions"]:
+        client.post(f"/api/lessons/{LESSON_ID}/quiz/{q['id']}/answer", json={"option_id": q["correct"]})
+    assert client.get(f"/api/lessons/{LESSON_ID}").json()["progress"]["value"] == 1.0
+    assert client.get("/api/progress").json()["completed"] == 1
+
+
+def test_deleting_a_lesson_removes_it_and_its_progress(client: TestClient, store: LessonStore) -> None:
+    q1 = quiz(store)["questions"][0]
+    client.post(f"/api/lessons/{LESSON_ID}/quiz/{q1['id']}/answer", json={"option_id": q1["correct"]})
+
+    assert client.delete(f"/api/lessons/{LESSON_ID}").status_code == 204
+
+    assert client.get("/api/lessons").json() == []
+    assert not store.lesson_dir(LESSON_ID).exists()
+    assert store.latest_answers(LESSON_ID) == {}
+    assert client.get(f"/api/lessons/{LESSON_ID}").status_code == 404
+    assert client.delete(f"/api/lessons/{LESSON_ID}").status_code == 404
+
+
+def test_shutdown_needs_a_stop_callback(store: LessonStore, web_dir: Path, client: TestClient) -> None:
+    assert client.post("/api/shutdown").status_code == 404
+
+    stopped = []
+    client = TestClient(create_app(store, web_dir, stop=lambda: stopped.append(True)), base_url="http://127.0.0.1")
+    assert client.post("/api/shutdown", headers={"Origin": "https://evil.example"}).status_code == 403
+    assert client.post("/api/shutdown").status_code == 202
+    assert stopped == [True]
+
+
+def test_reload_stops_the_running_hub(store: LessonStore, web_dir: Path) -> None:
+    import socket
+    import threading
+
+    import uvicorn
+
+    from synapto.cli import _port_in_use, stop_running_hub
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+
+    def stop() -> None:
+        server.should_exit = True
+
+    server = uvicorn.Server(uvicorn.Config(create_app(store, web_dir, stop=stop), host="127.0.0.1",
+                                           port=port, log_level="warning"))
+    thread = threading.Thread(target=server.run)
+    thread.start()
+    try:
+        while not server.started:
+            thread.join(0.05)
+        stop_running_hub(port)
+        thread.join(10)
+        assert not thread.is_alive()
+        assert not _port_in_use(port)
+        stop_running_hub(port)  # nothing running: a no-op
+    finally:
+        server.should_exit = True
+        thread.join(10)

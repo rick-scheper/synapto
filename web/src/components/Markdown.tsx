@@ -2,9 +2,9 @@
 // Relative links and images resolve to the lesson bundle's files; ```mermaid
 // blocks become diagrams; Python blocks are highlighted. Raw HTML isn't rendered.
 // Code references such as `src/pkg/mod.py:40-72` link to the notebook cell with
-// that source_ref (spec §5.2).
+// that source_ref (spec §5.2), when the lesson has a notebook.
 
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import { Link } from "react-router-dom";
 import remarkGfm from "remark-gfm";
@@ -32,7 +32,10 @@ const SOURCE_REF = /^[\w./-]+\.py:\d+(-\d+)?$/;
 
 const isRelative = (url: string) => !/^([a-z][a-z0-9+.-]*:|\/|#)/i.test(url);
 
-function components(lessonId: string, inline: boolean): Components {
+/** Whether the lesson being shown has a notebook part to link code references to. */
+export const HasNotebook = createContext(true);
+
+function components(lessonId: string, inline: boolean, notebook: boolean): Components {
   const resolve = (url?: string) => (url && isRelative(url) ? fileUrl(lessonId, url.replace(/^\.\//, "")) : url);
   return {
     ...(inline ? { p: ({ children }) => <>{children}</> } : {}),
@@ -52,7 +55,7 @@ function components(lessonId: string, inline: boolean): Components {
       const code = String(children ?? "");
       // Fenced blocks have a language or end in a newline; inline code has neither.
       if (lang === undefined && !code.includes("\n")) {
-        if (SOURCE_REF.test(code)) {
+        if (notebook && SOURCE_REF.test(code)) {
           return (
             <Link to={`/lessons/${encodeURIComponent(lessonId)}/notebook#src=${encodeURIComponent(code)}`} title="Show in the notebook">
               <code className="md-code">{children}</code>
@@ -73,8 +76,9 @@ function components(lessonId: string, inline: boolean): Components {
 }
 
 export function Markdown({ text, lessonId, inline = false }: { text: string; lessonId: string; inline?: boolean }): ReactNode {
+  const notebook = useContext(HasNotebook);
   const body = (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components(lessonId, inline)}>
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components(lessonId, inline, notebook)}>
       {text}
     </ReactMarkdown>
   );

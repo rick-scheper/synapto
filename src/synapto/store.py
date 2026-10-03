@@ -71,6 +71,10 @@ CREATE TABLE IF NOT EXISTS lesson_status (
 );
 """
 
+# Every table keyed by ``lesson_id``: what the learner did in a lesson.
+_LEARNER_TABLES = ("quiz_answers", "exercise_runs", "exercise_drafts", "notebook_copies",
+                   "data_slot_values", "lesson_status")
+
 
 def synapto_home() -> Path:
     """``$SYNAPTO_HOME``, else ``~/.synapto``."""
@@ -169,6 +173,26 @@ class LessonStore:
             staging.rename(target)
         shutil.rmtree(old, ignore_errors=True)
         return target
+
+    def remove(self, lesson_id: str) -> bool:
+        """Delete a published lesson and everything the learner recorded for it.
+
+        Returns False if there was no such lesson.
+        """
+        if not self.exists(lesson_id):
+            return False
+        target = self.lesson_dir(lesson_id)
+        trash = self.lessons_dir / f".old-{lesson_id}"
+        shutil.rmtree(trash, ignore_errors=True)
+        # Move the folder aside inside the transaction, so a failed move keeps the rows.
+        with closing(self.connect()) as db, db:
+            db.execute("DELETE FROM lessons WHERE id = ?", (lesson_id,))
+            for table in _LEARNER_TABLES:
+                db.execute(f"DELETE FROM {table} WHERE lesson_id = ?", (lesson_id,))
+            if target.exists():
+                target.rename(trash)
+        shutil.rmtree(trash, ignore_errors=True)
+        return True
 
     def lesson_ids(self, repo: str | None = None) -> list[str]:
         """Published lesson ids, newest first, optionally only those built in ``repo``."""

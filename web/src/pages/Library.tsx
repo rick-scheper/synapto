@@ -3,7 +3,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { api, useLoad, type LessonSummary } from "../api";
+import { api, completable, useLoad, type LessonSummary } from "../api";
 import { Badge, ProgressRing, Status } from "../components/ui";
 import { difficultyLabel, formatDate, plural, repoName, shortCommit } from "../format";
 
@@ -113,7 +113,7 @@ function LessonCard({ lesson }: { lesson: LessonSummary }) {
           </div>
           <h3 className="sy-h3 sy-lesson-title">{lesson.title}</h3>
         </div>
-        <ProgressRing value={lesson.progress.value} />
+        {completable(lesson.progress) && <ProgressRing value={lesson.progress.value} />}
       </div>
       <p className="sy-lesson-summary">{lesson.summary}</p>
       <div className="sy-lesson-chips">
@@ -133,6 +133,12 @@ function LessonCard({ lesson }: { lesson: LessonSummary }) {
 function ContinueBanner({ lesson }: { lesson: LessonSummary }) {
   const { quiz, exercises } = lesson.progress;
   const quizOpen = quiz.answered < quiz.total;
+  const counts = [
+    quiz.total > 0 && `${quiz.answered} of ${quiz.total} answered`,
+    exercises.total > 0 && `Rebuild ${exercises.passed} of ${exercises.total} passed`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <section className="continue panel" aria-label="Continue">
       <ProgressRing value={lesson.progress.value} size={56} stroke={5} />
@@ -141,7 +147,7 @@ function ContinueBanner({ lesson }: { lesson: LessonSummary }) {
         <div className="h-card">{lesson.title}</div>
         <div className="muted small">
           {quizOpen && "Next: Quiz · "}
-          {quiz.answered} of {quiz.total} answered · Rebuild {exercises.passed} of {exercises.total} passed
+          {counts}
         </div>
       </div>
       <Link to={`/lessons/${lesson.id}${quizOpen ? "/quiz" : ""}`} className="sy-btn sy-btn-primary">
@@ -169,7 +175,7 @@ function EmptyLibrary() {
 /** The most recently opened lesson that isn't finished. */
 function continueWith(lessons: LessonSummary[]): LessonSummary | undefined {
   return lessons
-    .filter((l) => l.opened_at && l.progress.value < 1)
+    .filter((l) => l.opened_at && completable(l.progress) && l.progress.value < 1)
     .sort((a, b) => b.opened_at!.localeCompare(a.opened_at!))[0];
 }
 

@@ -5,6 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 
+/** The parts a lesson can have, in the order the hub shows them. */
+export const PARTS = ["explain", "decisions", "notebook", "quiz", "rebuild"] as const;
+export type Part = (typeof PARTS)[number];
+
 export interface Lesson {
   id: string;
   title: string;
@@ -29,6 +33,8 @@ export interface Lesson {
     extra_sys_path: string[];
   };
   data_slots: DataSlot[];
+  /** The parts chosen at /debrief time; the hub shows a tab for each. */
+  parts: Part[];
 }
 
 export type DataValue = string | number;
@@ -49,10 +55,14 @@ export interface SlotState extends DataSlot {
 }
 
 export interface Progress {
+  /** 0…1; 0 for a lesson without a quiz or rebuild part. */
   value: number;
   quiz: { answered: number; correct: number; total: number };
   exercises: { passed: number; total: number };
 }
+
+/** Whether the lesson has anything to complete: quiz questions or exercises. */
+export const completable = (p: Progress) => p.quiz.total + p.exercises.total > 0;
 
 export interface Staleness {
   stale: boolean;
@@ -261,6 +271,7 @@ export const api = {
   lessons: (concept?: string) =>
     request<LessonSummary[]>(`/api/lessons${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
   lesson: (id: string) => request<LessonDetail>(`/api/lessons/${encodeURIComponent(id)}`),
+  deleteLesson: (id: string) => request<void>(lessonPath(id), send("DELETE"), "text"),
   decisions: (id: string) => request<Decisions>(`/api/lessons/${encodeURIComponent(id)}/decisions`),
   text: (id: string, path: string) => request<string>(fileUrl(id, path), undefined, "text"),
   quiz: (id: string) => request<Quiz>(fileUrl(id, "quiz.json")),

@@ -87,6 +87,9 @@ a:hover { color: var(--glow); }
 .lesson-head { display: flex; gap: var(--space-5); align-items: flex-start; flex-wrap: wrap; }
 .lesson-head-main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .lesson-progress { display: flex; align-items: center; gap: var(--space-3); padding-top: var(--space-2); }
+.lesson-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-3); }
+.lesson-delete { align-items: flex-end; }
+.lesson-delete .danger { color: var(--danger); }
 .changed-files { margin: var(--space-1) 0 0; padding-left: 18px; }
 .tab-body { padding-top: var(--space-4); }
 .with-sidebar { display: flex; gap: var(--space-7); align-items: flex-start; }

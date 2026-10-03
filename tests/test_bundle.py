@@ -225,6 +225,43 @@ def test_static_checks_pass_on_example(bundle: Path) -> None:
     assert messages(bundle) == []
 
 
+# --- parts (ADR-0007) ---------------------------------------------------------------
+
+
+def test_bundle_with_only_some_parts_is_valid(partial_bundle: Path, bare_python: Path) -> None:
+    # Nothing runs without a notebook or rebuild part, so the interpreter isn't checked.
+    edit_json(partial_bundle / "lesson.json", _set("environment.python", str(bare_python)))
+    report = validate_bundle(partial_bundle)
+    assert [str(i) for i in report.issues] == []
+    assert report.executed
+
+
+def test_file_of_an_unlisted_part_is_an_error(bundle: Path) -> None:
+    edit_json(bundle / "lesson.json", _set("parts", ["explain", "decisions", "notebook", "quiz"]))
+    assert messages(bundle) == [
+        "exercises: is present, but lesson.json parts doesn't list 'rebuild'; "
+        "add 'rebuild' to parts or delete exercises"
+    ]
+
+
+def test_missing_file_of_a_listed_part_names_the_part(partial_bundle: Path) -> None:
+    edit_json(partial_bundle / "lesson.json", _set("parts", ["explain", "quiz", "rebuild"]))
+    assert messages(partial_bundle) == [
+        "exercises: required folder is missing; lesson.json parts lists 'rebuild'"
+    ]
+
+
+@pytest.mark.parametrize(("parts", "expected"), [
+    ([], "lesson.json:parts: List should have at least 1 item"),
+    (["explain", "explain"], "lesson.json: parts lists these more than once: explain"),
+    (["explain", "slides"], "lesson.json:parts[1]: Input should be 'explain', 'decisions', "),
+])
+def test_bad_parts(bundle: Path, parts: list[str], expected: str) -> None:
+    edit_json(bundle / "lesson.json", _set("parts", parts))
+    found = messages(bundle)
+    assert any(m.startswith(expected) for m in found), "\n".join(found)
+
+
 def test_not_a_directory(tmp_path: Path) -> None:
     report = validate_bundle(tmp_path / "nope")
     assert [str(i) for i in report.issues] == [f"{tmp_path / 'nope'}: bundle is not a directory"]

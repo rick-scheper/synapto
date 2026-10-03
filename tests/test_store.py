@@ -81,3 +81,27 @@ def test_force_replaces_the_published_lesson(bundle: Path, home: Path) -> None:
     assert not stale.exists()
     assert [row[1] for row in indexed(home)] == ["Voxel downsampling, revised"]
     assert [p.name for p in (home / "lessons").iterdir()] == [LESSON_ID]
+
+
+def remove(*args: str, input: str | None = None):
+    return CliRunner().invoke(app, ["remove", *args], input=input)
+
+
+def test_remove_deletes_the_lesson(bundle: Path, home: Path) -> None:
+    assert publish(bundle).exit_code == 0
+
+    declined = remove(LESSON_ID, input="n\n")
+    assert declined.exit_code == 1
+    assert (home / "lessons" / LESSON_ID).is_dir()
+
+    result = remove(LESSON_ID, "--yes")
+    assert result.exit_code == 0, result.output
+    assert f"Removed {LESSON_ID}" in result.output
+    assert not (home / "lessons" / LESSON_ID).exists()
+    assert indexed(home) == []
+
+
+def test_remove_unknown_lesson(home: Path) -> None:
+    result = remove("2026-01-01-nope", "--yes")
+    assert result.exit_code == 1
+    assert "no lesson '2026-01-01-nope'" in result.output

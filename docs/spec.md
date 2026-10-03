@@ -119,16 +119,26 @@ Decisions behind this design: [ADR-0001](adr/0001-execute-code-in-project-venv-k
 
 The bundle is the contract between the skill and the hub. Nothing else crosses that boundary.
 
+A lesson has one or more **parts**, chosen by the developer at `/debrief` time and listed in `lesson.json` `parts` ([ADR-0007](adr/0007-choose-lesson-parts-at-debrief.md)). Each part has its own file, which is required when the part is listed and an error when it isn't:
+
+| part | file |
+|---|---|
+| `explain` | `explanation.md` |
+| `decisions` | `decisions.md` |
+| `notebook` | `notebook.ipynb` (plus `fixtures/` for its data slots) |
+| `quiz` | `quiz.json` |
+| `rebuild` | `exercises/` |
+
 ```
 <lesson-id>/
-├── lesson.json            # required: metadata, source, environment, data slots
-├── explanation.md         # required: narrative, Mermaid blocks allowed
-├── decisions.md           # required: architectural decisions (may say "none")
+├── lesson.json            # always: metadata, parts, source, environment, data slots
+├── explanation.md         # explain: narrative, Mermaid blocks allowed
+├── decisions.md           # decisions: architectural decisions (may say "none")
 ├── diagrams/              # optional: .mmd or .svg referenced from markdown
-├── notebook.ipynb         # required: dissected, runnable code
+├── notebook.ipynb         # notebook: dissected, runnable code
 ├── fixtures/              # optional: small sample inputs (≤ 5 MB total)
-├── quiz.json              # required: 5–10 questions
-└── exercises/             # required: 1–3 exercises
+├── quiz.json              # quiz: 5–10 questions
+└── exercises/             # rebuild: 1–3 exercises
     └── 01-<slug>/
         ├── exercise.json
         ├── stub.py
@@ -150,6 +160,7 @@ The bundle is the contract between the skill and the hub. Nothing else crosses t
   "difficulty": "intermediate",
   "concepts": ["octree", "spatial hashing", "numpy vectorisation"],
   "prerequisites": ["numpy broadcasting"],
+  "parts": ["explain", "decisions", "notebook", "quiz", "rebuild"],
   "source": {
     "repo_path": "/home/me/code/pointtools",
     "remote": "https://github.com/me/pointtools",
@@ -179,6 +190,7 @@ The bundle is the contract between the skill and the hub. Nothing else crosses t
 }
 ```
 
+- `parts` is optional and defaults to all five. It must not be empty or repeat a part.
 - `source.files[].sha256` lets the hub show a "code has changed since this lesson" banner when the repo has moved on.
 - `data_slots[].kind` is one of `file`, `dir`, `string` or `number`. A `default` must point inside the bundle (a fixture) or be a literal value.
 - `difficulty` is one of `beginner`, `intermediate` or `advanced`. `created_at` must include a timezone. `environment.python`, `environment.cwd` and `source.repo_path` are absolute paths; `source.files[].path` and `extra_sys_path` entries are relative.
@@ -301,16 +313,17 @@ There are 5–10 questions. They test understanding (why, what happens if, which
 
 ## 6. The `/debrief` skill
 
-It ships in `plugin/skills/debrief/SKILL.md`. It takes an optional argument for scope: `/debrief`, `/debrief since a1b2c3d`, `/debrief src/pointtools/downsample.py`.
+It ships in `plugin/skills/debrief/SKILL.md`. It takes an optional argument for scope: `/debrief`, `/debrief since a1b2c3d`, `/debrief src/pointtools/downsample.py`, optionally preceded by the parts to make: `/debrief only explain,quiz since a1b2c3d`.
 
 Steps:
 
 1. **Scope.** The default is uncommitted changes plus the commits made during this session. If that's ambiguous (nothing changed, or a huge diff), ask the developer once.
-2. **Gather.** Read the diff, the touched files in full, and the reasoning from the conversation, including the alternatives that were considered.
-3. **Plan.** Pick 3–7 key functions, the concepts a learner needs and the decisions made. Lessons should be focused: if the build covers several unrelated features, propose separate lessons.
-4. **Write** `lesson.json`, `explanation.md` (with at least one diagram), `decisions.md`, `notebook.ipynb`, `fixtures/`, `quiz.json` and `exercises/`, following §5. Generate fixtures with code where possible rather than copying real data.
-5. **Validate.** Run `synapto validate <bundle>`. Fix and re-run until it passes, up to 5 attempts. If it still fails, stop and report the remaining errors.
-6. **Publish.** Run `synapto publish <bundle>` and give the developer the lesson URL plus a two-line summary.
+2. **Parts.** Unless the argument names them (`/debrief only explain,quiz`), ask the developer once which parts to make. The default is all five.
+3. **Gather.** Read the diff, the touched files in full, and the reasoning from the conversation, including the alternatives that were considered.
+4. **Plan.** Pick 3–7 key functions (for the notebook and rebuild parts), the concepts a learner needs and the decisions made. Lessons should be focused: if the build covers several unrelated features, propose separate lessons.
+5. **Write** `lesson.json` and the files of the chosen parts, following §5. `explanation.md` has at least one diagram. Generate fixtures with code where possible rather than copying real data.
+6. **Validate.** Run `synapto validate <bundle>`. Fix and re-run until it passes, up to 5 attempts. If it still fails, stop and report the remaining errors.
+7. **Publish.** Run `synapto publish <bundle>` and give the developer the lesson URL plus a two-line summary.
 
 The bundle is written to a temporary working directory, never into the project repo.
 
@@ -318,13 +331,13 @@ The bundle is written to a temporary working directory, never into the project r
 
 | command | does |
 |---|---|
-| `synapto serve [--port 8765] [--open]` | starts the hub on `127.0.0.1` |
+| `synapto serve [--port 8765] [--open] [--reload]` | starts the hub on `127.0.0.1`. `--reload` first stops the hub already running on that port |
 | `synapto validate <bundle>` | runs all checks in §8 and prints errors as `file:location: message`. Exit code 0 means valid |
 | `synapto publish <bundle> [--force]` | validates, copies to the store and indexes it. Fails if the id exists, unless `--force` |
 | `synapto list [--repo PATH]` | lists lessons |
 | `synapto open <id>` | opens the lesson in the browser, starting `serve` if needed |
 | `synapto doctor [--python PATH]` | checks that the project interpreter has `ipykernel` and `pytest` and prints the fix command |
-| `synapto remove <id>` | deletes a lesson and its progress |
+| `synapto remove <id> [--yes]` | deletes a lesson and its progress, after asking for confirmation |
 
 The store location is `~/.synapto`. It can be overridden with `SYNAPTO_HOME`.
 
@@ -332,8 +345,9 @@ The store location is `~/.synapto`. It can be overridden with `SYNAPTO_HOME`.
 
 `synapto validate` fails on any of the following:
 
-- **Schema:** `lesson.json`, `quiz.json` or any `exercise.json` doesn't match the pydantic models. A required file is missing.
-- **Environment:** `environment.python` doesn't exist, or lacks `ipykernel` or `pytest`.
+- **Schema:** `lesson.json`, `quiz.json` or any `exercise.json` doesn't match the pydantic models.
+- **Parts:** the file of a part listed in `parts` is missing, or the file of an unlisted part is present. Only the listed parts are checked.
+- **Environment:** `environment.python` doesn't exist, or lacks `ipykernel` or `pytest`. Checked only when the lesson has a notebook or rebuild part.
 - **Notebook:** it doesn't execute top to bottom in a fresh kernel (with the default data slots), any cell errors, or a `function` cell has no following `demo` cell.
 - **Exercises:** the tests fail against `solution.py`, or the tests **pass** against `stub.py`. The second check guarantees the tests actually check something.
 - **Quiz:** `correct` doesn't match an option id, there are fewer than 3 options, or an explanation is empty.
@@ -360,6 +374,7 @@ FastAPI, served by uvicorn and bound to `127.0.0.1` only. It also serves the bui
 |---|---|---|
 | GET | `/api/lessons` | list, with filters `repo` and `concept` |
 | GET | `/api/lessons/{id}` | `lesson.json` plus progress, staleness and the latest quiz answers; records that the lesson was opened |
+| DELETE | `/api/lessons/{id}` | deletes the lesson, its progress and its kernel, like `synapto remove` |
 | GET | `/api/lessons/{id}/decisions` | `decisions.md` parsed into one record per decision (§5.3), with the raw Markdown kept for sections that don't follow the template |
 | GET | `/api/lessons/{id}/files/{path}` | raw bundle files (markdown, svg, fixtures) |
 | GET / PUT | `/api/lessons/{id}/notebook` | the learner's working copy. GET falls back to the original |
@@ -374,6 +389,7 @@ FastAPI, served by uvicorn and bound to `127.0.0.1` only. It also serves the bui
 | POST | `/api/lessons/{id}/exercises/{eid}/run` | body `{code}` → per-test results; records the run and keeps the code as the draft |
 | GET / PUT | `/api/lessons/{id}/exercises/{eid}/draft` | the learner's in-progress code. GET falls back to `stub.py` |
 | GET | `/api/progress` | totals across lessons and concepts |
+| POST | `/api/shutdown` | stops the server; used by `synapto serve --reload` |
 
 ### 9.2 Kernel manager
 
@@ -423,7 +439,7 @@ Published bundles are immutable. Everything the learner changes lives in SQLite,
 Pages:
 
 - **Library:** lesson cards grouped by repo, with concept filters, progress rings and a staleness badge.
-- **Lesson**, with tabs:
+- **Lesson**, with a tab for each of its parts and a "Delete lesson" button (with confirmation). A lesson without a quiz or exercises shows no progress.
   - **Explain:** rendered Markdown and Mermaid. Code references link to notebook cells.
   - **Decisions:** one card per decision, each with a "Revisit" button.
   - **Notebook:** cells with run, run-all, restart and reset buttons; a data slot panel with file path inputs; and rich outputs (text, tables, images and Plotly where present).
