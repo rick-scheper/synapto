@@ -1,0 +1,36 @@
+import subprocess
+import sys
+import sysconfig
+from pathlib import Path
+
+import pytest
+
+
+def _make_venv(root: Path) -> tuple[Path, Path]:
+    subprocess.run([sys.executable, "-m", "venv", "--without-pip", str(root)], check=True)
+    python = root / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+    site = subprocess.run(
+        [str(python), "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    return python, Path(site)
+
+
+@pytest.fixture(scope="session")
+def project_python(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A separate venv standing in for a developer's project.
+
+    It borrows ipykernel and pytest from the dev venv through a .pth file and
+    has a package, ``projmarker``, that only exists in this venv.
+    """
+    python, site = _make_venv(tmp_path_factory.mktemp("project") / ".venv")
+    (site / "borrow-dev-venv.pth").write_text(sysconfig.get_paths()["purelib"] + "\n")
+    (site / "projmarker.py").write_text("WHERE = 'project venv'\n")
+    return python
+
+
+@pytest.fixture(scope="session")
+def bare_python(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A venv without ipykernel or pytest."""
+    python, _ = _make_venv(tmp_path_factory.mktemp("bare") / ".venv")
+    return python

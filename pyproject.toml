@@ -1,0 +1,36 @@
+[project]
+name = "debrief"
+version = "0.0.1"
+description = "Turn what your coding agent just built into an interactive lesson."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "jupyter_client>=8.6",
+    "typer>=0.12",
+]
+
+[project.scripts]
+debrief = "debrief.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    # The test suite uses the dev venv as the "project venv", so it needs
+    # what debrief doctor requires of a project interpreter.
+    "ipykernel>=6.29",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/debrief"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["slow: creates a separate venv"]
