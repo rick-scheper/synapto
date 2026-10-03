@@ -5,7 +5,7 @@
 
 ## Context
 
-The hub is a local web page served by the FastAPI server. Four of its pages mostly display content (Library, Explain, Decisions, Quiz). Two behave like small applications: the Notebook (editable cells, outputs streamed over a WebSocket while a cell runs, rich outputs such as tables, images and Plotly) and Rebuild (a code editor, a test run, per-test results). The UI must ship prebuilt inside the wheel so `pipx install debrief` needs no Node, work offline on 127.0.0.1, render Markdown and Mermaid, and use a real code editor. The author is stronger in Python than in frontend work and builds the UI mostly with a coding agent.
+The hub is a local web page served by the FastAPI server. Four of its pages mostly display content (Library, Explain, Decisions, Quiz). Two behave like small applications: the Notebook (editable cells, outputs streamed over a WebSocket while a cell runs, rich outputs such as tables, images and Plotly) and Rebuild (a code editor, a test run, per-test results). The UI must ship prebuilt inside the wheel so `pipx install synapto-hub` needs no Node, work offline on 127.0.0.1, render Markdown and Mermaid, and use a real code editor. The author is stronger in Python than in frontend work and builds the UI mostly with a coding agent.
 
 ## Options considered
 
@@ -13,7 +13,7 @@ The hub is a local web page served by the FastAPI server. Four of its pages most
 2. **Svelte + Vite SPA**: the same architecture with much less, more readable code. The cost is a smaller ecosystem and less consistent agent output (Svelte 4 vs 5).
 3. **Server-rendered pages with HTMX, plus JS islands**: keeps most of the UI in Python. But the Notebook and Rebuild pages still need hand-written client-side JS, CodeMirror still needs bundling, and Jinja becomes a new dependency.
 
-Agent recommendation at the time: Option 1, because the pages that define debrief are client-heavy, and that is where libraries and agent fluency save the most.
+Agent recommendation at the time: Option 1, because the pages that define Synapto are client-heavy, and that is where libraries and agent fluency save the most.
 
 ## Decision
 
@@ -23,7 +23,7 @@ We chose **React + Vite + TypeScript, as a single-page app**.
 
 ## Consequences
 
-- Source lives in `web/`. `vite build` writes static files to `src/debrief/web/`, which FastAPI serves and the wheel ships. Users never need Node; contributors and CI do.
+- Source lives in `web/`. `vite build` writes static files to `src/synapto/web/`, which FastAPI serves and the wheel ships. Users never need Node; contributors and CI do.
 - The HTTP and WebSocket API (spec §9.1) is the only contract between server and UI. The frontend holds no lesson logic of its own.
 - Frontend code is agent-maintained rather than author-owned. Keep it conventional (mainstream libraries, few abstractions) so any agent can pick it up, and test behaviour through the API where possible.
 - Revisit if the bundle size or the Node toolchain becomes a real burden for releases.

@@ -1,0 +1,54 @@
+# Tests every push. On a v* tag, builds the wheel with the web UI bundled
+# (ADR-0005) and publishes it to PyPI as synapto-hub (ADR-0006).
+name: release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+      - name: Build the web UI
+        working-directory: web
+        run: npm ci && npm run build
+      - name: Test
+        run: uv run pytest -q
+      - name: Build the wheel and sdist
+        run: uv build
+      - name: Check the wheel ships the web UI
+        run: unzip -l dist/*.whl | grep -q 'synapto/web/index.html'
+      - name: Check the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
+          test "v$version" = "$GITHUB_REF_NAME"
+          grep -q "\"version\": \"$version\"" plugin/.claude-plugin/plugin.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # PyPI trusted publishing; no API token in the repo
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

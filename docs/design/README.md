@@ -1,6 +1,6 @@
 # Synapto design handoff
 
-Design reference for the debrief/Synapto hub UI (spec §12, milestone M2+). Put this folder at `docs/design/` in the repo. Nothing here is production code.
+Design reference for the Synapto hub UI (spec §12, milestone M2+). Put this folder at `docs/design/` in the repo. Nothing here is production code.
 
 ## What's here
 

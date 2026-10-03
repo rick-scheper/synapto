@@ -7,3 +7,4 @@
 | [0003](0003-central-lesson-store.md) | Keep published lessons in one central store per user | Accepted |
 | [0004](0004-grade-exercises-with-pytest.md) | Grade "rebuild" exercises with pytest in the project venv | Accepted |
 | [0005](0005-frontend-react-vite.md) | Build the web UI as a React + Vite + TypeScript single-page app | Accepted |
+| [0006](0006-name-synapto.md) | Name the project Synapto; publish on PyPI as `synapto-hub` | Accepted |

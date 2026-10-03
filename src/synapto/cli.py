@@ -1,4 +1,4 @@
-"""The ``debrief`` command line (spec §7)."""
+"""The ``synapto`` command line (spec §7)."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ from typing import Annotated
 
 import typer
 
-from debrief.bundle.models import Lesson
-from debrief.bundle.validator import validate_bundle
-from debrief.environment import check_interpreter, find_project_python
-from debrief.store import LessonExistsError, LessonStore
+from synapto.bundle.models import Lesson
+from synapto.bundle.validator import validate_bundle
+from synapto.environment import check_interpreter, find_project_python
+from synapto.store import LessonExistsError, LessonStore
 
-DEFAULT_PORT = 8765  # debrief serve (spec §7)
+DEFAULT_PORT = 8765  # synapto serve (spec §7)
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -73,12 +73,12 @@ def serve(
 
     import uvicorn
 
-    from debrief.server.app import create_app
+    from synapto.server.app import create_app
 
     url = f"http://127.0.0.1:{port}/"
     if open_browser:
         threading.Timer(1.0, webbrowser.open, (url,)).start()
-    typer.echo(f"debrief hub: {url}")
+    typer.echo(f"Synapto hub: {url}")
     uvicorn.run(create_app(), host="127.0.0.1", port=port, log_level="warning")
 
 

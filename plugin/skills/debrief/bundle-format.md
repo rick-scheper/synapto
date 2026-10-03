@@ -1,6 +1,6 @@
 # Lesson bundle format
 
-`debrief validate` enforces every **must** below. Unknown JSON fields are errors, so copy key names exactly.
+`synapto validate` enforces every **must** below. Unknown JSON fields are errors, so copy key names exactly.
 
 ```
 <lesson-id>/
@@ -62,7 +62,7 @@
 - `created_at` has a timezone. `difficulty`: `beginner`, `intermediate` or `advanced`.
 - `remote`, `branch`, `base_commit`, `head_commit` may be `null`.
 - `source.files` lists every file that any `source_ref` points into, with the sha256 of its current contents (`sha256sum`, or `shasum -a 256` on macOS). Paths are relative to `repo_path`.
-- `environment` comes from `debrief doctor`. `cwd` is usually the repo root. `extra_sys_path` holds directories, relative to `cwd`, that must be importable — `["src"]` for a src layout the venv doesn't already install, `[]` otherwise.
+- `environment` comes from `synapto doctor`. `cwd` is usually the repo root. `extra_sys_path` holds directories, relative to `cwd`, that must be importable — `["src"]` for a src layout the venv doesn't already install, `[]` otherwise.
 - `data_slots[].kind`: `file`, `dir`, `string` or `number`. A `file`/`dir` default is a path inside the bundle (a fixture); a `number` default is a JSON number.
 
 ## explanation.md
@@ -96,11 +96,11 @@ With no architectural decisions, the file is one line saying so.
 
 ## notebook.ipynb
 
-A standard nbformat 4 notebook. Every cell carries `metadata.debrief.role`:
+A standard nbformat 4 notebook. Every cell carries `metadata.synapto.role`:
 
 | role | cell type | contains |
 |---|---|---|
-| `setup` | code | imports from the real project, loading data from `DEBRIEF_DATA` |
+| `setup` | code | imports from the real project, loading data from `SYNAPTO_DATA` |
 | `function` | code | one key function, copied verbatim from the source; also needs `function` and `source_ref` |
 | `demo` | code | a call to the function above on fixture data, printing inputs, an intermediate value and the output |
 | `explain` | markdown | a few sentences between code cells: what to notice, what to try changing |
@@ -116,16 +116,16 @@ Optional metadata: `"hidden": true` hides a cell; `"editable": false` locks it (
     "language_info": {"name": "python"}
   },
   "cells": [
-    {"cell_type": "markdown", "id": "intro", "metadata": {"debrief": {"role": "explain"}},
+    {"cell_type": "markdown", "id": "intro", "metadata": {"synapto": {"role": "explain"}},
      "source": "# Voxel downsampling\n\nWhat this notebook walks through."},
     {"cell_type": "code", "id": "setup", "execution_count": null, "outputs": [],
-     "metadata": {"debrief": {"role": "setup", "editable": false}},
-     "source": "import math\n\nfrom pkg.snap import read_xyz\n\npoints = read_xyz(DEBRIEF_DATA[\"points\"])"},
+     "metadata": {"synapto": {"role": "setup", "editable": false}},
+     "source": "import math\n\nfrom pkg.snap import read_xyz\n\npoints = read_xyz(SYNAPTO_DATA[\"points\"])"},
     {"cell_type": "code", "id": "fn-voxel-key", "execution_count": null, "outputs": [],
-     "metadata": {"debrief": {"role": "function", "function": "voxel_key", "source_ref": "src/pkg/snap.py:24-33"}},
+     "metadata": {"synapto": {"role": "function", "function": "voxel_key", "source_ref": "src/pkg/snap.py:24-33"}},
      "source": "def voxel_key(point, size):\n    ..."},
     {"cell_type": "code", "id": "demo-voxel-key", "execution_count": null, "outputs": [],
-     "metadata": {"debrief": {"role": "demo"}},
+     "metadata": {"synapto": {"role": "demo"}},
      "source": "print(voxel_key(points[0], 1.0))"}
   ]
 }
@@ -139,7 +139,7 @@ Cell `id`s are unique, 1–64 characters of letters, digits, `-` and `_`.
 - Each `function` cell is followed by at least one `demo` cell before the next `function` cell.
 - Order cells so the notebook runs top to bottom in a fresh kernel.
 
-**Runtime:** cells run with the project interpreter, in `environment.cwd`. Before the first cell, a hidden preamble puts `extra_sys_path` and the bundle folder on `sys.path` and defines `DEBRIEF_DATA` (slot name → value; file/dir slots become absolute paths) and `DEBRIEF_LESSON_DIR` (the bundle folder). Read inputs through `DEBRIEF_DATA[...]`, never through hard-coded paths.
+**Runtime:** cells run with the project interpreter, in `environment.cwd`. Before the first cell, a hidden preamble puts `extra_sys_path` and the bundle folder on `sys.path` and defines `SYNAPTO_DATA` (slot name → value; file/dir slots become absolute paths) and `SYNAPTO_LESSON_DIR` (the bundle folder). Read inputs through `SYNAPTO_DATA[...]`, never through hard-coded paths.
 
 ## fixtures/
 

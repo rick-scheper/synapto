@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from debrief.bundle.models import Lesson
-from debrief.server.app import create_app
-from debrief.store import LessonStore
+from synapto.bundle.models import Lesson
+from synapto.server.app import create_app
+from synapto.store import LessonStore
 
 LESSON_ID = "2026-10-03-voxel-downsampling"
 BASE = f"/api/lessons/{LESSON_ID}"

@@ -1,4 +1,4 @@
-"""``debrief validate``: check a lesson bundle before it is published (spec §8).
+"""``synapto validate``: check a lesson bundle before it is published (spec §8).
 
 The validator reports every problem it can find in one pass, so the agent
 writing the bundle can fix them all before re-running. Each issue reads
@@ -31,10 +31,10 @@ from typing import Any, Literal, TypeVar
 import nbformat
 from pydantic import BaseModel, ValidationError
 
-from debrief.bundle.models import CellMeta, Exercise, Lesson, Quiz, source_ref_path
-from debrief.environment import check_interpreter
-from debrief.server.kernels import KernelConfig, KernelError, LessonKernel
-from debrief.server.testrunner import run_tests
+from synapto.bundle.models import CellMeta, Exercise, Lesson, Quiz, source_ref_path
+from synapto.environment import check_interpreter
+from synapto.server.kernels import KernelConfig, KernelError, LessonKernel
+from synapto.server.testrunner import run_tests
 
 REQUIRED_FILES = ("lesson.json", "explanation.md", "decisions.md", "notebook.ipynb", "quiz.json")
 MARKDOWN_FILES = ("explanation.md", "decisions.md")
@@ -192,7 +192,7 @@ class _Validator:
             return None
 
     def load_notebook(self) -> list[tuple[int, Any, CellMeta]] | None:
-        """The notebook's cells with their parsed ``debrief`` metadata, or None if unusable."""
+        """The notebook's cells with their parsed ``synapto`` metadata, or None if unusable."""
         name = "notebook.ipynb"
         path = self.bundle / name
         if not path.is_file():
@@ -215,9 +215,9 @@ class _Validator:
         cells: list[tuple[int, Any, CellMeta]] = []
         ok = True
         for i, cell in enumerate(nb.cells):
-            raw = cell.metadata.get("debrief")
+            raw = cell.metadata.get("synapto")
             if raw is None:
-                self.error(name, f"cells[{i}]", "metadata.debrief is missing; every cell needs "
+                self.error(name, f"cells[{i}]", "metadata.synapto is missing; every cell needs "
                            "a role (setup, function, demo or explain)")
                 ok = False
                 continue
@@ -225,7 +225,7 @@ class _Validator:
                 meta = CellMeta.model_validate(raw)
             except ValidationError as exc:
                 for err in exc.errors():
-                    where = _json_path([f"cells[{i}]", "metadata", "debrief", *err["loc"]])
+                    where = _json_path([f"cells[{i}]", "metadata", "synapto", *err["loc"]])
                     self.error(name, where, _pydantic_message(err))
                 ok = False
                 continue
@@ -325,7 +325,7 @@ class _Validator:
         mmdc = shutil.which("mmdc")
         if mmdc is None:
             return
-        with tempfile.TemporaryDirectory(prefix="debrief-mmd-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="synapto-mmd-") as tmp:
             for match in _MERMAID.finditer(text):
                 lineno = text.count("\n", 0, match.start()) + 1
                 src, out = Path(tmp) / "block.mmd", Path(tmp) / "block.svg"
@@ -406,7 +406,7 @@ class _Validator:
             refs += [("quiz.json", f"questions[{i}].source_ref", q.source_ref)
                      for i, q in enumerate(quiz.questions) if q.source_ref]
         if cells is not None:
-            refs += [("notebook.ipynb", f"cells[{i}].metadata.debrief.source_ref", m.source_ref)
+            refs += [("notebook.ipynb", f"cells[{i}].metadata.synapto.source_ref", m.source_ref)
                      for i, _, m in cells if m.source_ref]
         refs += [(f"exercises/{folder}/exercise.json", "source_ref", ex.source_ref)
                  for folder, ex in exercises if ex is not None]

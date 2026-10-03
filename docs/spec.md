@@ -1,4 +1,4 @@
-# debrief — specification
+# Synapto — specification
 
 > Working name. Check PyPI/GitHub for collisions before the first release.
 
@@ -10,9 +10,9 @@
 
 Coding agents now write meaningful chunks of a codebase. Developers accept those changes without understanding them, or they skip past the architectural choices the agent made. Over time the developer owns code they can't explain, debug or defend.
 
-## 2. What debrief is
+## 2. What Synapto is
 
-debrief is a local learning hub. Right after an agent has built something, the developer runs `/debrief` in Claude Code. The agent then produces an interactive lesson about exactly what it just built and publishes it to a website running on the developer's machine. On that website the developer can:
+Synapto is a local learning hub. Right after an agent has built something, the developer runs `/debrief` in Claude Code. The agent then produces an interactive lesson about exactly what it just built and publishes it to a website running on the developer's machine. On that website the developer can:
 
 - read a clear explanation with diagrams,
 - review the architectural decisions and the alternatives that were rejected,
@@ -25,14 +25,14 @@ debrief is a local learning hub. Right after an agent has built something, the d
 - A lesson is generated with one command, after the build, from the actual diff and conversation.
 - Every lesson is validated before it is published: all notebook cells run and all exercises are gradeable.
 - Code runs in the project's own Python environment, so real dependencies and real data work.
-- Installation is a single command (`pipx install debrief`) plus a Claude Code plugin.
+- Installation is a single command (`pipx install synapto-hub`) plus a Claude Code plugin.
 
 ### Non-goals (v1)
 
 - Languages other than Python.
 - Multiple users, authentication or hosting for teams.
 - Agent harnesses other than Claude Code. The design keeps this possible: the skill only writes files and calls the CLI.
-- Sandboxing. debrief runs your own code on your own machine with your permissions (see §11).
+- Sandboxing. Synapto runs your own code on your own machine with your permissions (see §11).
 
 ## 3. User flow
 
@@ -40,17 +40,17 @@ debrief is a local learning hub. Right after an agent has built something, the d
 sequenceDiagram
     actor Dev as Developer
     participant CC as Claude Code
-    participant CLI as debrief CLI
-    participant Store as ~/.debrief
-    participant Hub as debrief hub (web)
+    participant CLI as Synapto CLI
+    participant Store as ~/.synapto
+    participant Hub as Synapto hub (web)
 
     Dev->>CC: "build X" (normal agent session)
     CC-->>Dev: changes made
     Dev->>CC: /debrief
     CC->>CC: read diff + conversation, write bundle
-    CC->>CLI: debrief validate <bundle>
+    CC->>CLI: Synapto validate <bundle>
     CLI-->>CC: errors → agent fixes → re-validate
-    CC->>CLI: debrief publish <bundle>
+    CC->>CLI: Synapto publish <bundle>
     CLI->>Store: copy bundle, index in SQLite
     CC-->>Dev: lesson URL
     Dev->>Hub: open lesson: explain · decisions · notebook · quiz · rebuild
@@ -63,16 +63,16 @@ flowchart LR
     subgraph Plugin["Claude Code plugin"]
         S["/debrief skill"]
     end
-    subgraph Pkg["debrief Python package"]
+    subgraph Pkg["synapto Python package"]
         CLI["CLI\nvalidate · publish · serve · doctor"]
         API["FastAPI server\n127.0.0.1"]
         KM["Kernel manager\njupyter_client"]
         TR["Test runner\npytest subprocess"]
         WEB["Web UI\nstatic build"]
     end
-    subgraph Home["~/.debrief"]
+    subgraph Home["~/.synapto"]
         L["lessons/&lt;id&gt;/"]
-        DB[("debrief.db\nSQLite")]
+        DB[("synapto.db\nSQLite")]
     end
     subgraph Proj["Developer's project"]
         PY["project venv python\n+ ipykernel + pytest"]
@@ -95,11 +95,12 @@ flowchart LR
 Repository layout:
 
 ```
-debrief/
-├── plugin/                    # Claude Code plugin
+synapto/
+├── .claude-plugin/marketplace.json  # plugin marketplace for this repo
+├── plugin/                    # Claude Code plugin "synapto"
 │   ├── .claude-plugin/plugin.json
 │   └── skills/debrief/SKILL.md
-├── src/debrief/
+├── src/synapto/
 │   ├── cli.py
 │   ├── bundle/                # schema models (pydantic), loader, validator
 │   ├── server/                # FastAPI app, routes, kernel manager, test runner
@@ -214,11 +215,11 @@ If there were no architectural decisions, the file says so in one line. The hub 
 
 ### 5.4 `notebook.ipynb`
 
-A standard nbformat 4 notebook, so it renders on GitHub and opens in Jupyter or VS Code. debrief-specific behaviour lives in cell metadata under the `debrief` key:
+A standard nbformat 4 notebook, so it renders on GitHub and opens in Jupyter or VS Code. synapto-specific behaviour lives in cell metadata under the `synapto` key:
 
 ```json
 {
-  "debrief": {
+  "synapto": {
     "role": "setup | function | demo | explain",
     "function": "voxel_downsample",
     "source_ref": "src/pointtools/downsample.py:40-72",
@@ -235,7 +236,7 @@ A standard nbformat 4 notebook, so it renders on GitHub and opens in Jupyter or 
 | `demo` | a call to the function on fixture or real data, printing or plotting intermediate results |
 | `explain` | a short markdown cell placed between code cells |
 
-Every cell needs `metadata.debrief.role`. `explain` cells are markdown cells; the other roles are code cells. A `function` cell also needs `function` and `source_ref`, and must contain a top-level `def <function>`.
+Every cell needs `metadata.synapto.role`. `explain` cells are markdown cells; the other roles are code cells. A `function` cell also needs `function` and `source_ref`, and must contain a top-level `def <function>`.
 
 **Dissection rules:**
 
@@ -246,11 +247,11 @@ Every cell needs `metadata.debrief.role`. `explain` cells are markdown cells; th
 **Data slot injection:** before running any cell, the server executes a hidden preamble:
 
 ```python
-DEBRIEF_DATA = {"input_las": "/abs/path/chosen/by/user.las"}
-DEBRIEF_LESSON_DIR = "/home/me/.debrief/lessons/<id>"
+SYNAPTO_DATA = {"input_las": "/abs/path/chosen/by/user.las"}
+SYNAPTO_LESSON_DIR = "/home/me/.synapto/lessons/<id>"
 ```
 
-Setup cells read from `DEBRIEF_DATA[...]` and never hard-code paths.
+Setup cells read from `SYNAPTO_DATA[...]` and never hard-code paths.
 
 ### 5.5 `quiz.json`
 
@@ -308,8 +309,8 @@ Steps:
 2. **Gather.** Read the diff, the touched files in full, and the reasoning from the conversation, including the alternatives that were considered.
 3. **Plan.** Pick 3–7 key functions, the concepts a learner needs and the decisions made. Lessons should be focused: if the build covers several unrelated features, propose separate lessons.
 4. **Write** `lesson.json`, `explanation.md` (with at least one diagram), `decisions.md`, `notebook.ipynb`, `fixtures/`, `quiz.json` and `exercises/`, following §5. Generate fixtures with code where possible rather than copying real data.
-5. **Validate.** Run `debrief validate <bundle>`. Fix and re-run until it passes, up to 5 attempts. If it still fails, stop and report the remaining errors.
-6. **Publish.** Run `debrief publish <bundle>` and give the developer the lesson URL plus a two-line summary.
+5. **Validate.** Run `synapto validate <bundle>`. Fix and re-run until it passes, up to 5 attempts. If it still fails, stop and report the remaining errors.
+6. **Publish.** Run `synapto publish <bundle>` and give the developer the lesson URL plus a two-line summary.
 
 The bundle is written to a temporary working directory, never into the project repo.
 
@@ -317,19 +318,19 @@ The bundle is written to a temporary working directory, never into the project r
 
 | command | does |
 |---|---|
-| `debrief serve [--port 8765] [--open]` | starts the hub on `127.0.0.1` |
-| `debrief validate <bundle>` | runs all checks in §8 and prints errors as `file:location: message`. Exit code 0 means valid |
-| `debrief publish <bundle> [--force]` | validates, copies to the store and indexes it. Fails if the id exists, unless `--force` |
-| `debrief list [--repo PATH]` | lists lessons |
-| `debrief open <id>` | opens the lesson in the browser, starting `serve` if needed |
-| `debrief doctor [--python PATH]` | checks that the project interpreter has `ipykernel` and `pytest` and prints the fix command |
-| `debrief remove <id>` | deletes a lesson and its progress |
+| `synapto serve [--port 8765] [--open]` | starts the hub on `127.0.0.1` |
+| `synapto validate <bundle>` | runs all checks in §8 and prints errors as `file:location: message`. Exit code 0 means valid |
+| `synapto publish <bundle> [--force]` | validates, copies to the store and indexes it. Fails if the id exists, unless `--force` |
+| `synapto list [--repo PATH]` | lists lessons |
+| `synapto open <id>` | opens the lesson in the browser, starting `serve` if needed |
+| `synapto doctor [--python PATH]` | checks that the project interpreter has `ipykernel` and `pytest` and prints the fix command |
+| `synapto remove <id>` | deletes a lesson and its progress |
 
-The store location is `~/.debrief`. It can be overridden with `DEBRIEF_HOME`.
+The store location is `~/.synapto`. It can be overridden with `SYNAPTO_HOME`.
 
 ## 8. Validation
 
-`debrief validate` fails on any of the following:
+`synapto validate` fails on any of the following:
 
 - **Schema:** `lesson.json`, `quiz.json` or any `exercise.json` doesn't match the pydantic models. A required file is missing.
 - **Environment:** `environment.python` doesn't exist, or lacks `ipykernel` or `pytest`.
@@ -392,9 +393,9 @@ For each exercise run:
 ## 10. Storage
 
 ```
-~/.debrief/
+~/.synapto/
 ├── config.toml
-├── debrief.db
+├── synapto.db
 └── lessons/<id>/          # published bundles; never modified after publish
 ```
 
@@ -412,7 +413,7 @@ Published bundles are immutable. Everything the learner changes lives in SQLite,
 
 ## 11. Security model
 
-- debrief executes code from lessons with the developer's own permissions, on purpose. Lessons are generated from the developer's own projects.
+- Synapto executes code from lessons with the developer's own permissions, on purpose. Lessons are generated from the developer's own projects.
 - The server binds to `127.0.0.1` only. There is no option to bind elsewhere in v1.
 - Because the kernel socket runs code, the server answers only requests whose `Host` is `127.0.0.1` or `localhost` (against DNS rebinding), and refuses WebSockets and non-GET requests whose `Origin` is another site (against cross-site requests from pages open in the browser).
 - When importing a bundle that wasn't generated locally (a future feature), show a clear warning that it will run that code.
@@ -429,13 +430,13 @@ Pages:
   - **Quiz:** one question at a time, with an explanation after each answer and a score at the end.
   - **Rebuild:** the exercise prompt, hints revealed one by one, an editor preloaded with `stub.py`, a "Run tests" button, per-test results, and a "Show solution" button that becomes available after 3 attempts.
 
-Frontend stack: a React + Vite + TypeScript single-page app ([ADR-0005](adr/0005-frontend-react-vite.md)), built into `src/debrief/web/`.
+Frontend stack: a React + Vite + TypeScript single-page app ([ADR-0005](adr/0005-frontend-react-vite.md)), built into `src/synapto/web/`.
 
 ## 13. Milestones
 
 | # | milestone | done when |
 |---|---|---|
-| M0 | Bundle models and `debrief validate` | a hand-written example bundle validates, and broken variants fail with clear errors |
+| M0 | Bundle models and `synapto validate` | a hand-written example bundle validates, and broken variants fail with clear errors |
 | M1 | `/debrief` skill plus `publish` | the skill produces a passing bundle for a real build in one of your repos |
 | M2 | Server and read-only UI | Library, Explain, Decisions and Quiz work |
 | M3 | Notebook execution | kernel in the project venv, data slots, working copy and reset |
@@ -448,6 +449,5 @@ The skill and the validator come first because the bundle is the contract. Once 
 
 These need ADRs before the milestone that depends on them:
 
-- **Package/project name** (before M5): `debrief` is a working name.
 - **Lesson updates**: when the code changes, should `/debrief` regenerate a lesson as a new version or as a new lesson?
 - **Cross-lesson concept tracking**: build a concept graph from `concepts` across lessons (post-v1).

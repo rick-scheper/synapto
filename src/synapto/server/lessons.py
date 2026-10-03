@@ -12,8 +12,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from debrief.bundle.models import Exercise, Lesson, Quiz
-from debrief.store import LessonStore
+from synapto.bundle.models import Exercise, Lesson, Quiz
+from synapto.store import LessonStore
 
 
 class ChangedFile(BaseModel):

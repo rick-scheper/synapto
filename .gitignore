@@ -7,4 +7,4 @@ build/
 *.egg-info/
 
 # Built web UI (npm run build in web/)
-src/debrief/web/
+src/synapto/web/

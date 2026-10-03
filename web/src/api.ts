@@ -1,5 +1,5 @@
 // Types and calls for the hub's HTTP API (spec §9.1). They mirror the pydantic
-// models in src/debrief/server/ and src/debrief/bundle/.
+// models in src/synapto/server/ and src/synapto/bundle/.
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -186,7 +186,7 @@ export interface NotebookCell {
   id?: string;
   cell_type: "code" | "markdown" | "raw";
   source: MultiLine;
-  metadata: { debrief?: CellMeta; [key: string]: unknown };
+  metadata: { synapto?: CellMeta; [key: string]: unknown };
   outputs?: Output[];
   execution_count?: number | null;
   attachments?: unknown;

@@ -16,8 +16,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from debrief.bundle.validator import validate_bundle
-from debrief.cli import app
+from synapto.bundle.validator import validate_bundle
+from synapto.cli import app
 
 
 def edit_json(path: Path, change: Callable[[dict], object]) -> None:
@@ -148,22 +148,22 @@ STATIC_VARIANTS: dict[str, tuple[Callable[[Path], object], str]] = {
         _notebook(lambda cells: cells[1].pop("outputs")),
         "notebook.ipynb:cells[1]: does not match the nbformat 4 schema",
     ),
-    "cell without debrief metadata": (
+    "cell without synapto metadata": (
         _notebook(lambda cells: cells[1]["metadata"].clear()),
-        "notebook.ipynb:cells[1]: metadata.debrief is missing",
+        "notebook.ipynb:cells[1]: metadata.synapto is missing",
     ),
     "unknown role": (
-        _notebook(lambda cells: cells[1]["metadata"]["debrief"].update(role="imports")),
-        "notebook.ipynb:cells[1].metadata.debrief.role: Input should be 'setup', 'function', "
+        _notebook(lambda cells: cells[1]["metadata"]["synapto"].update(role="imports")),
+        "notebook.ipynb:cells[1].metadata.synapto.role: Input should be 'setup', 'function', "
         "'demo' or 'explain'",
     ),
     "function cell without function": (
-        _notebook(lambda cells: cells[3]["metadata"]["debrief"].pop("function")),
-        "notebook.ipynb:cells[3].metadata.debrief: a function cell needs both 'function' and "
+        _notebook(lambda cells: cells[3]["metadata"]["synapto"].pop("function")),
+        "notebook.ipynb:cells[3].metadata.synapto: a function cell needs both 'function' and "
         "'source_ref'",
     ),
     "explain role on code cell": (
-        _notebook(lambda cells: cells[4]["metadata"]["debrief"].update(role="explain")),
+        _notebook(lambda cells: cells[4]["metadata"]["synapto"].update(role="explain")),
         "notebook.ipynb:cells[4]: role 'explain' needs a markdown cell, but this is a code cell",
     ),
     "function cell without demo": (
@@ -171,7 +171,7 @@ STATIC_VARIANTS: dict[str, tuple[Callable[[Path], object], str]] = {
         "notebook.ipynb:cells[3]: function cell for 'voxel_key' has no demo cell after it",
     ),
     "function cell names the wrong function": (
-        _notebook(lambda cells: cells[3]["metadata"]["debrief"].update(function="voxel_index")),
+        _notebook(lambda cells: cells[3]["metadata"]["synapto"].update(function="voxel_index")),
         "notebook.ipynb:cells[3]: function cell for 'voxel_index' has no top-level "
         "'def voxel_index'",
     ),

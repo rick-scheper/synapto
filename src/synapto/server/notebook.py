@@ -2,7 +2,7 @@
 
 The learner's data slot values and notebook working copy live in the store; the
 published bundle is never touched. ``serve_kernel_socket`` speaks the small JSON
-protocol of ``debrief.server.kernels`` over a WebSocket:
+protocol of ``synapto.server.kernels`` over a WebSocket:
 
 - in: ``{"type": "execute", "id": str, "code": str}`` and ``{"type": "interrupt"}``
 - out: the kernel events of each execution, each tagged with the request's ``"id"``.
@@ -25,8 +25,8 @@ import nbformat
 from fastapi import WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-from debrief.bundle.models import DataSlot, Lesson
-from debrief.server.kernels import DataValue, KernelError, LessonKernel
+from synapto.bundle.models import DataSlot, Lesson
+from synapto.server.kernels import DataValue, KernelError, LessonKernel
 
 
 class SlotState(BaseModel):

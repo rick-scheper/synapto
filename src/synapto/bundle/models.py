@@ -201,7 +201,7 @@ class Exercise(_Model):
     source_ref: SourceRef
 
 
-# --- notebook.ipynb cell metadata (``metadata.debrief``) -----------------------
+# --- notebook.ipynb cell metadata (``metadata.synapto``) -----------------------
 
 
 class CellMeta(_Model):

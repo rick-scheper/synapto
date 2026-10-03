@@ -71,7 +71,7 @@ function toNotebook(base: Notebook, cells: Cell[]): Notebook {
   };
 }
 
-const meta = (cell: Cell) => cell.raw.metadata.debrief;
+const meta = (cell: Cell) => cell.raw.metadata.synapto;
 const isCode = (cell: Cell) => cell.raw.cell_type === "code";
 
 export function NotebookTab({ lesson }: { lesson: Lesson }) {

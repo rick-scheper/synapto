@@ -5,7 +5,7 @@ a copy of the exercise's ``test_exercise.py``, and pytest runs there with the
 project interpreter. Results come from pytest's JUnit XML report, so the
 project venv needs nothing beyond pytest itself.
 
-``debrief validate`` uses this to check that tests pass on ``solution.py`` and
+``synapto validate`` uses this to check that tests pass on ``solution.py`` and
 fail on ``stub.py``; the server uses it to grade the learner's code.
 """
 
@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from debrief.environment import interpreter_path, project_env
+from synapto.environment import interpreter_path, project_env
 
 TEST_TIMEOUT = 60.0
 _MAX_MESSAGE_LINES = 30
@@ -102,7 +102,7 @@ def run_tests(
     env["PYTHONPATH"] = os.pathsep.join(str((cwd / p).resolve()) for p in extra_sys_path)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
 
-    with tempfile.TemporaryDirectory(prefix="debrief-test-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="synapto-test-") as tmp:
         root = Path(tmp)
         (root / "candidate.py").write_text(code, encoding="utf-8")
         shutil.copyfile(test_file, root / "test_exercise.py")

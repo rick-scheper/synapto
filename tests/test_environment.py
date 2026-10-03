@@ -2,8 +2,8 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from debrief.cli import app
-from debrief.environment import check_interpreter, find_project_python, venv_root
+from synapto.cli import app
+from synapto.environment import check_interpreter, find_project_python, venv_root
 
 
 def test_project_interpreter_is_ready(project_python: Path) -> None:

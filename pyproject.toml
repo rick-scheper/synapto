@@ -1,10 +1,22 @@
 [project]
-name = "debrief"
-version = "0.0.1"
+name = "synapto-hub"
+version = "0.1.0"
 description = "Turn what your coding agent just built into an interactive lesson."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
+authors = [{ name = "rick-scheper" }]
+keywords = ["claude-code", "coding-agents", "learning", "jupyter", "lessons"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Framework :: Jupyter",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Education",
+    "Topic :: Software Development",
+]
 dependencies = [
     "fastapi>=0.115",
     "jupyter_client>=8.6",
@@ -16,15 +28,19 @@ dependencies = [
     "websockets>=13",
 ]
 
+[project.urls]
+Homepage = "https://github.com/rick-scheper/synapto"
+Issues = "https://github.com/rick-scheper/synapto/issues"
+
 [project.scripts]
-debrief = "debrief.cli:app"
+synapto = "synapto.cli:app"
 
 [dependency-groups]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.24",
     # The test suite uses the dev venv as the "project venv", so it needs
-    # what debrief doctor requires of a project interpreter.
+    # what synapto doctor requires of a project interpreter.
     "ipykernel>=6.29",
     "httpx>=0.27",
 ]
@@ -33,10 +49,14 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.sdist]
+include = ["/src/synapto", "/tests", "/README.md", "/LICENSE"]
+artifacts = ["/src/synapto/web/**"]
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/debrief"]
+packages = ["src/synapto"]
 # The built web UI is gitignored but ships in the wheel (ADR-0005).
-artifacts = ["src/debrief/web/**"]
+artifacts = ["/src/synapto/web/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

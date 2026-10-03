@@ -133,7 +133,7 @@ class Component extends DCLogic {
       progress: 0.6, ringSize: 48, ringStroke: 4,
       tabs: [{ id: 'explain', label: 'Explain' }, { id: 'decisions', label: 'Decisions', count: 2 }, { id: 'notebook', label: 'Notebook' }, { id: 'quiz', label: 'Quiz', count: 3 }, { id: 'rebuild', label: 'Rebuild', count: 1 }],
       outline: outline,
-      c1: 'import numpy as np\nimport laspy\nfrom pointtools.io import read_xyz\n\npoints = read_xyz(DEBRIEF_DATA["input_las"])\nprint(points.shape)',
+      c1: 'import numpy as np\nimport laspy\nfrom pointtools.io import read_xyz\n\npoints = read_xyz(SYNAPTO_DATA["input_las"])\nprint(points.shape)',
       c2: 'def voxel_key(xyz, size):\n    # floor, not round: keeps negative coords in the right cell\n    return np.floor(xyz / size).astype(np.int64)',
       c3: 'sample = np.array([[1.1, 0.3, 0.0], [-0.2, 0.4, 0.1]])\nprint(voxel_key(sample, 0.5))',
       o3: '[[ 2  0  0]\n [-1  0  0]]',

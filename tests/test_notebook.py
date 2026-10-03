@@ -9,9 +9,9 @@ from fastapi.testclient import TestClient
 from starlette.testclient import WebSocketTestSession
 from starlette.websockets import WebSocketDisconnect
 
-from debrief.bundle.models import Lesson
-from debrief.server.app import create_app
-from debrief.store import LessonStore
+from synapto.bundle.models import Lesson
+from synapto.server.app import create_app
+from synapto.store import LessonStore
 
 LESSON_ID = "2026-10-03-voxel-downsampling"
 BASE = f"/api/lessons/{LESSON_ID}"
@@ -153,7 +153,7 @@ def test_whole_notebook_runs_over_the_socket(client: TestClient, store: LessonSt
             events = run(ws, code, rid=f"c{i}")
             assert events[0] == {"type": "kernel", "session": session, "id": f"c{i}"}
             assert events[-1]["status"] == "ok", events
-        out = stdout(run(ws, "print(DEBRIEF_DATA['points'], DEBRIEF_DATA['voxel_size'])"))
+        out = stdout(run(ws, "print(SYNAPTO_DATA['points'], SYNAPTO_DATA['voxel_size'])"))
     lesson_dir = store.lesson_dir(LESSON_ID).resolve()
     assert out == f"{lesson_dir / 'fixtures' / 'points.xyz'} 1.0\n"
 
@@ -174,7 +174,7 @@ def test_restart_applies_new_data_slots(client: TestClient, tmp_path: Path) -> N
     second = client.post(f"{BASE}/kernel/restart").json()["session"]
     assert second != first
     with client.websocket_connect(SOCKET) as ws:
-        events = run(ws, "print(DEBRIEF_DATA['voxel_size'])")
+        events = run(ws, "print(SYNAPTO_DATA['voxel_size'])")
     assert events[0]["session"] == second
     assert stdout(events) == "0.5\n"
 

@@ -23,7 +23,7 @@ We chose **pytest in a subprocess, using the project's interpreter**.
 ## Consequences
 
 - Learners see every test case passing or failing, with messages.
-- `debrief validate` can guarantee that tests pass on `solution.py` and fail on `stub.py`.
-- `pytest` must be present in the project venv (checked by `debrief doctor`).
+- `synapto validate` can guarantee that tests pass on `solution.py` and fail on `stub.py`.
+- `pytest` must be present in the project venv (checked by `synapto doctor`).
 - Revisit if exercise runs feel slow. A pytest session could be kept warm inside the kernel instead.
 - Reversibility: easy. The test runner is one small module behind one endpoint.

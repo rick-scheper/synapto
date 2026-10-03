@@ -1,5 +1,5 @@
 // The lesson kernel's WebSocket (spec §9.1, §9.2) and how its events become
-// nbformat outputs. The protocol is documented in src/debrief/server/notebook.py.
+// nbformat outputs. The protocol is documented in src/synapto/server/notebook.py.
 
 import type { MimeBundle, Output } from "./api";
 
@@ -89,7 +89,7 @@ export class KernelSocket {
         pending.onEvent({
           type: "error",
           ename: "ConnectionLost",
-          evalue: "lost the connection to the debrief server; is `debrief serve` still running?",
+          evalue: "lost the connection to the Synapto server; is `synapto serve` still running?",
           traceback: [],
         });
         pending.resolve({ type: "done", status: "aborted", execution_count: null });

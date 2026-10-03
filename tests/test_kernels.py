@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from debrief.server.kernels import (
+from synapto.server.kernels import (
     KernelConfig,
     KernelPool,
     KernelStartError,
@@ -45,8 +45,8 @@ async def test_runs_in_project_interpreter_with_preamble(kernel: LessonKernel, c
         "print(sys.executable)\n"
         "print(os.getcwd())\n"
         "print(projmarker.WHERE, pkg.answer())\n"
-        "print(DEBRIEF_DATA['n'], DEBRIEF_DATA['input'])\n"
-        "print(DEBRIEF_LESSON_DIR)\n"
+        "print(SYNAPTO_DATA['n'], SYNAPTO_DATA['input'])\n"
+        "print(SYNAPTO_LESSON_DIR)\n"
     )
     assert events[-1] == {"type": "done", "status": "ok", "execution_count": 1}
     lines = _texts(events).splitlines()
@@ -99,7 +99,7 @@ async def test_kernel_death_is_reported_and_restart_recovers(kernel: LessonKerne
     assert events[-1]["status"] == "error"
 
     await kernel.restart()
-    events = await kernel.run("print('x' in dir(), DEBRIEF_DATA['n'])")
+    events = await kernel.run("print('x' in dir(), SYNAPTO_DATA['n'])")
     assert _texts(events) == "False 3\n"
 
 
@@ -173,7 +173,7 @@ async def test_pool_reuses_evicts_lru_and_reaps(config) -> None:
         # Changing data slots replaces the kernel.
         a2 = await pool.get("a", replace(config, data={"n": 5}))
         assert a2 is not a and not a.started
-        assert _texts(await a2.run("print(DEBRIEF_DATA)")) == "{'n': 5}\n"
+        assert _texts(await a2.run("print(SYNAPTO_DATA)")) == "{'n': 5}\n"
 
         clock.now = 4 + 101
         await pool.get("c", config)  # touch c

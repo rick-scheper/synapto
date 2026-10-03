@@ -9,7 +9,7 @@ import pytest
 
 EXAMPLE = Path(__file__).parent / "example"
 
-# The example bundle's test_exercise.py files run against candidate.py via debrief validate.
+# The example bundle's test_exercise.py files run against candidate.py via synapto validate.
 collect_ignore = ["example"]
 
 

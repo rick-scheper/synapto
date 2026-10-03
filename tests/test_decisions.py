@@ -1,6 +1,6 @@
 """Parsing decisions.md (spec §5.3) for the Decisions tab."""
 
-from debrief.bundle.decisions import parse_decisions
+from synapto.bundle.decisions import parse_decisions
 
 TEMPLATE = """# Decisions
 

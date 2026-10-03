@@ -30,10 +30,10 @@ from starlette.datastructures import Headers
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-import debrief
-from debrief.bundle.decisions import Decisions, parse_decisions
-from debrief.bundle.models import Exercise, Lesson
-from debrief.server.lessons import (
+import synapto
+from synapto.bundle.decisions import Decisions, parse_decisions
+from synapto.bundle.models import Exercise, Lesson
+from synapto.server.lessons import (
     LessonSummary,
     Progress,
     QuizProgress,
@@ -46,8 +46,8 @@ from debrief.server.lessons import (
     summarise,
     update_completion,
 )
-from debrief.server.kernels import KernelConfig, KernelError, KernelPool, LessonKernel
-from debrief.server.notebook import (
+from synapto.server.kernels import KernelConfig, KernelError, KernelPool, LessonKernel
+from synapto.server.notebook import (
     MissingSlotError,
     NotebookState,
     SlotState,
@@ -57,16 +57,16 @@ from debrief.server.notebook import (
     serve_kernel_socket,
     slot_states,
 )
-from debrief.server.testrunner import TestStatus, run_tests
-from debrief.store import ExerciseRun, LessonStore
+from synapto.server.testrunner import TestStatus, run_tests
+from synapto.store import ExerciseRun, LessonStore
 
-WEB_DIR = Path(debrief.__file__).parent / "web"
+WEB_DIR = Path(synapto.__file__).parent / "web"
 
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
 _LESSON_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
-_NOT_BUILT = """<!doctype html><meta charset="utf-8"><title>debrief</title>
+_NOT_BUILT = """<!doctype html><meta charset="utf-8"><title>Synapto</title>
 <p>The web UI hasn't been built. Run <code>npm install &amp;&amp; npm run build</code> in
 <code>web/</code>, then reload. The API is available under <code>/api</code>.</p>"""
 
@@ -211,7 +211,7 @@ def create_app(
             reaper.cancel()
             await pool.shutdown_all()
 
-    app = FastAPI(title="debrief", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
+    app = FastAPI(title="Synapto", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
     app.add_middleware(SameOriginMiddleware)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(allowed_hosts))
 

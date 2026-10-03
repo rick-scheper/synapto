@@ -1,17 +1,17 @@
 ---
 name: debrief
-description: Turn what was just built into an interactive lesson and publish it to the local debrief hub.
+description: Turn what was just built into an interactive lesson and publish it to the local Synapto hub.
 argument-hint: "[since <commit> | <path>...]"
 disable-model-invocation: true
 ---
 
 # /debrief
 
-Write a **lesson** about the code built in this session, so the developer — the **learner** — understands it instead of just accepting it. The lesson is a **bundle**: a folder of files that `debrief validate` checks and `debrief publish` copies into the developer's local hub.
+Write a **lesson** about the code built in this session, so the developer — the **learner** — understands it instead of just accepting it. The lesson is a **bundle**: a folder of files that `synapto validate` checks and `synapto publish` copies into the developer's local hub.
 
 Scope argument: `$ARGUMENTS`
 
-Before step 1, run `debrief --help`. If the command is missing, tell the developer to install it (`pipx install debrief`) and stop.
+Before step 1, run `synapto --help`. If the command is missing, tell the developer to install it (`pipx install synapto-hub`) and stop.
 
 ## 1. Scope
 
@@ -42,9 +42,9 @@ Pick, and write down:
 
 ## 4. Environment
 
-In the project root, run `debrief doctor` (add `--python PATH` if the project venv isn't `.venv`, `venv` or `$VIRTUAL_ENV`). If it reports `MISSING`, show the developer the printed fix command and ask before running it — it installs into their venv.
+In the project root, run `synapto doctor` (add `--python PATH` if the project venv isn't `.venv`, `venv` or `$VIRTUAL_ENV`). If it reports `MISSING`, show the developer the printed fix command and ask before running it — it installs into their venv.
 
-**Done when** `debrief doctor` prints `Ready`, and you have the interpreter path and version for `lesson.json`.
+**Done when** `synapto doctor` prints `Ready`, and you have the interpreter path and version for `lesson.json`.
 
 ## 5. Write the bundle
 
@@ -56,12 +56,12 @@ Create a working directory with `mktemp -d` and write the bundle to `<that dir>/
 
 ## 6. Validate
 
-Run `debrief validate <bundle>`. Each error reads `file:location: message`; fix them all, then re-run. Allow up to 5 runs. Fix the bundle, never the project: if the project code itself is broken, that's a finding for the developer.
+Run `synapto validate <bundle>`. Each error reads `file:location: message`; fix them all, then re-run. Allow up to 5 runs. Fix the bundle, never the project: if the project code itself is broken, that's a finding for the developer.
 
 **Done when** the output ends in `<bundle>: valid`. After 5 failing runs, stop: report the remaining errors and the bundle path to the developer.
 
 ## 7. Publish
 
-Run `debrief publish <bundle>`. If the id is already published, set `id` in `lesson.json` to the free id the error suggests and publish again. Use `--force` only when the developer asked to replace that lesson.
+Run `synapto publish <bundle>`. If the id is already published, set `id` in `lesson.json` to the free id the error suggests and publish again. Use `--force` only when the developer asked to replace that lesson.
 
-**Done when** publish prints `Lesson URL:`. Give the developer that URL and a two-line summary of what the lesson covers. If the hub isn't running, they start it with `debrief serve`.
+**Done when** publish prints `Lesson URL:`. Give the developer that URL and a two-line summary of what the lesson covers. If the hub isn't running, they start it with `synapto serve`.

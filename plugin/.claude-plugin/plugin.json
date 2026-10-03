@@ -1,6 +1,6 @@
 {
-  "name": "debrief",
-  "version": "0.0.1",
+  "name": "synapto",
+  "version": "0.1.0",
   "description": "Turn what your coding agent just built into an interactive lesson.",
   "author": {
     "name": "rick-scheper"

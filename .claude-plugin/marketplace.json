@@ -1,0 +1,17 @@
+{
+  "name": "synapto",
+  "owner": {
+    "name": "rick-scheper"
+  },
+  "metadata": {
+    "description": "Synapto: interactive lessons from what your coding agent just built."
+  },
+  "plugins": [
+    {
+      "name": "synapto",
+      "source": "./plugin",
+      "description": "Turn what your coding agent just built into an interactive lesson.",
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-"""M1: ``debrief publish`` validates a bundle, copies it into the store and indexes it."""
+"""M1: ``synapto publish`` validates a bundle, copies it into the store and indexes it."""
 
 import json
 import sqlite3
@@ -7,15 +7,15 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from debrief.cli import app
+from synapto.cli import app
 
 LESSON_ID = "2026-10-03-voxel-downsampling"
 
 
 @pytest.fixture
 def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    home = tmp_path / "debrief-home"
-    monkeypatch.setenv("DEBRIEF_HOME", str(home))
+    home = tmp_path / "synapto-home"
+    monkeypatch.setenv("SYNAPTO_HOME", str(home))
     return home
 
 
@@ -24,7 +24,7 @@ def publish(bundle: Path, *args: str):
 
 
 def indexed(home: Path) -> list[tuple]:
-    with sqlite3.connect(home / "debrief.db") as db:
+    with sqlite3.connect(home / "synapto.db") as db:
         return db.execute("SELECT id, title, difficulty, concepts_json FROM lessons").fetchall()
 
 

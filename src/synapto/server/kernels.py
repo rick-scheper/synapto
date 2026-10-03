@@ -1,10 +1,10 @@
 """Jupyter kernels that run lesson code in the project's own venv (ADR-0001, spec §9.2).
 
-Lesson code never runs inside the debrief process. Each lesson gets an ipykernel
+Lesson code never runs inside the synapto process. Each lesson gets an ipykernel
 started with ``environment.python``, so the project's real packages and files
 work. Before any cell runs, a hidden preamble puts ``extra_sys_path`` and the
-bundle directory on ``sys.path`` and defines ``DEBRIEF_DATA`` and
-``DEBRIEF_LESSON_DIR`` (spec §5.4).
+bundle directory on ``sys.path`` and defines ``SYNAPTO_DATA`` and
+``SYNAPTO_LESSON_DIR`` (spec §5.4).
 
 ``LessonKernel.execute`` translates Jupyter iopub messages into a small JSON
 protocol, one dict per event:
@@ -18,7 +18,7 @@ protocol, one dict per event:
 - ``{"type": "done", "status": "ok" | "error" | "aborted", "execution_count": n | None}``,
   always the last event.
 
-The same class is used by the server and by ``debrief validate``, so a notebook
+The same class is used by the server and by ``synapto validate``, so a notebook
 that validates runs the same way in the hub.
 """
 
@@ -39,8 +39,8 @@ from jupyter_client.kernelspec import KernelSpec
 from jupyter_client.manager import AsyncKernelManager
 from traitlets import Unicode
 
-from debrief.bundle.models import Lesson
-from debrief.environment import check_interpreter, interpreter_path, project_env
+from synapto.bundle.models import Lesson
+from synapto.environment import check_interpreter, interpreter_path, project_env
 
 KernelEvent = dict[str, Any]
 DataValue = str | int | float
@@ -104,7 +104,7 @@ class KernelConfig:
 def resolve_data(
     lesson: Lesson, lesson_dir: Path, values: Mapping[str, DataValue] | None = None
 ) -> dict[str, DataValue]:
-    """``DEBRIEF_DATA`` for a lesson: the learner's value for each slot, else its default.
+    """``SYNAPTO_DATA`` for a lesson: the learner's value for each slot, else its default.
 
     A file or dir default points inside the bundle, so it becomes an absolute path
     in ``lesson_dir``. Slots with neither a value nor a default are left out.
@@ -131,13 +131,13 @@ def build_preamble(config: KernelConfig) -> str:
 
     return "\n".join(
         [
-            "import sys as _debrief_sys",
-            f"for _debrief_p in reversed({config.sys_path_entries()!r}):",
-            "    if _debrief_p not in _debrief_sys.path:",
-            "        _debrief_sys.path.insert(0, _debrief_p)",
-            "del _debrief_sys, _debrief_p",
-            f"DEBRIEF_DATA = {dict(config.data)!r}",
-            f"DEBRIEF_LESSON_DIR = {str(config.lesson_dir)!r}",
+            "import sys as _synapto_sys",
+            f"for _synapto_p in reversed({config.sys_path_entries()!r}):",
+            "    if _synapto_p not in _synapto_sys.path:",
+            "        _synapto_sys.path.insert(0, _synapto_p)",
+            "del _synapto_sys, _synapto_p",
+            f"SYNAPTO_DATA = {dict(config.data)!r}",
+            f"SYNAPTO_LESSON_DIR = {str(config.lesson_dir)!r}",
         ]
     )
 
@@ -155,7 +155,7 @@ class ProjectKernelManager(AsyncKernelManager):
     def kernel_spec(self) -> KernelSpec:
         return KernelSpec(
             argv=[self.python, "-m", "ipykernel_launcher", "-f", "{connection_file}"],
-            display_name=f"debrief ({self.python})",
+            display_name=f"Synapto ({self.python})",
             language="python",
             interrupt_mode="signal",
         )

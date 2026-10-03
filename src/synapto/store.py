@@ -1,8 +1,8 @@
 """The central lesson store (ADR-0003, spec §10).
 
 Published bundles live in ``<home>/lessons/<id>/`` and are never modified after
-publish. ``<home>/debrief.db`` indexes them. ``<home>`` is ``~/.debrief``
-unless ``DEBRIEF_HOME`` is set.
+publish. ``<home>/synapto.db`` indexes them. ``<home>`` is ``~/.synapto``
+unless ``SYNAPTO_HOME`` is set.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from debrief.bundle.models import Lesson
+from synapto.bundle.models import Lesson
 
 # Left behind in a bundle by validation or by the agent's own test runs.
 _SCRATCH = shutil.ignore_patterns("__pycache__", ".pytest_cache", ".ipynb_checkpoints")
@@ -72,9 +72,9 @@ CREATE TABLE IF NOT EXISTS lesson_status (
 """
 
 
-def debrief_home() -> Path:
-    """``$DEBRIEF_HOME``, else ``~/.debrief``."""
-    return Path(os.environ.get("DEBRIEF_HOME") or Path.home() / ".debrief").expanduser()
+def synapto_home() -> Path:
+    """``$SYNAPTO_HOME``, else ``~/.synapto``."""
+    return Path(os.environ.get("SYNAPTO_HOME") or Path.home() / ".synapto").expanduser()
 
 
 class LessonExistsError(Exception):
@@ -107,7 +107,7 @@ class LessonStore:
 
     @classmethod
     def default(cls) -> LessonStore:
-        return cls(debrief_home())
+        return cls(synapto_home())
 
     @property
     def lessons_dir(self) -> Path:
@@ -115,7 +115,7 @@ class LessonStore:
 
     @property
     def db_path(self) -> Path:
-        return self.home / "debrief.db"
+        return self.home / "synapto.db"
 
     def lesson_dir(self, lesson_id: str) -> Path:
         return self.lessons_dir / lesson_id

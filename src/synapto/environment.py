@@ -1,6 +1,6 @@
 """Inspect the project interpreter that lesson code runs in (ADR-0001, ADR-0004).
 
-debrief never imports lesson code itself. It runs it in the project's own venv,
+Synapto never imports lesson code itself. It runs it in the project's own venv,
 so that interpreter must exist and have ``ipykernel`` and ``pytest`` installed.
 """
 
@@ -137,7 +137,7 @@ def project_env(python: Path) -> dict[str, str]:
     """Our environment, made to look like ``python``'s venv is active.
 
     Used for kernels and pytest runs, so that e.g. ``!pip install x`` in a cell
-    installs into the project venv, not into debrief's.
+    installs into the project venv, not into synapto's.
     """
     env = os.environ.copy()
     env.pop("PYTHONHOME", None)
