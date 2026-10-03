@@ -122,6 +122,8 @@ def stop_running_hub(port: int, timeout: float = 15.0) -> None:
     import urllib.error
     import urllib.request
 
+    if not _port_in_use(port):
+        return  # nothing is running
     url = f"http://127.0.0.1:{port}/api/shutdown"
     try:
         urllib.request.urlopen(urllib.request.Request(url, method="POST"), timeout=5).close()
@@ -129,8 +131,10 @@ def stop_running_hub(port: int, timeout: float = 15.0) -> None:
         typer.echo(f"error: whatever is on port {port} can't be stopped with --reload (HTTP {exc.code}). "
                    "A hub started before --reload existed has to be stopped by hand (Ctrl+C).", err=True)
         raise typer.Exit(1) from None
-    except (urllib.error.URLError, OSError):
-        return  # nothing is running
+    except (urllib.error.URLError, OSError) as exc:
+        typer.echo(f"error: port {port} is in use, but no hub answered there ({exc}). "
+                   "Stop whatever is using it, or pick another --port.", err=True)
+        raise typer.Exit(1) from None
     deadline = time.monotonic() + timeout
     while _port_in_use(port):
         if time.monotonic() > deadline:
@@ -141,10 +145,23 @@ def stop_running_hub(port: int, timeout: float = 15.0) -> None:
 
 
 def _port_in_use(port: int) -> bool:
+    """Whether something listens on 127.0.0.1:``port``.
+
+    Tries to bind rather than connect: on some setups (WSL among them) a connect to
+    a closed port hangs until the TCP timeout instead of being refused.
+    """
+    import os
     import socket
 
     with socket.socket() as sock:
-        return sock.connect_ex(("127.0.0.1", port)) == 0
+        if os.name != "nt":
+            # Like uvicorn, so a just-stopped hub's TIME_WAIT connections don't count.
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(("127.0.0.1", port))
+        except OSError:
+            return True
+        return False
 
 
 def lesson_url(lesson_id: str) -> str:
