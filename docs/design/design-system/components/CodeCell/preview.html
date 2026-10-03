@@ -1,0 +1,12 @@
+<!-- @dsCard group="Notebook" height=300 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>CodeCell — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stack',style:{gap:'24px'}},h(S.CodeCell,{role:'function',fn:'voxel_key',sourceRef:'downsample.py:44-50',status:'done',execCount:3,code:'def voxel_key(xyz, size):\n    # floor, not round: keeps negative coords in the right cell\n    return np.floor(xyz / size).astype(np.int64)',time:'Ran in 0.01 s'}),h(S.CodeCell,{role:'demo',status:'running',code:'keys = voxel_key(points[:5], 0.5)\nprint(keys)',output:'[[ 2 -1  0]\n [ 2 -1  0]'})));
+</script>
+</body>
+</html>

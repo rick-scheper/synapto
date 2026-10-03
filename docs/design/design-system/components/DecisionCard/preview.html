@@ -1,0 +1,12 @@
+<!-- @dsCard group="Content" height=360 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>DecisionCard — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stack'},h(S.DecisionCard,{title:'Spatial index for downsampling',context:'Points must be grouped per voxel; clouds have 1–50 M points.',options:[{id:'A',label:'Full octree data structure'},{id:'B',label:'Hash of integer voxel keys with np.unique'},{id:'C',label:'scipy KD-tree'}],chosen:'B',why:'One vectorised pass, no tree to build; only per-voxel means are needed.',tradeoffs:'No neighbour queries; revisit if multi-level LOD is needed.'})));
+</script>
+</body>
+</html>

@@ -36,8 +36,9 @@ Current decisions:
 | 0002 | The notebook is a standard **`.ipynb`** (nbformat 4), with debrief data in cell metadata under the `debrief` key |
 | 0003 | Published lessons live in a **central store** `~/.debrief/` (override: `DEBRIEF_HOME`), with SQLite for the index and progress |
 | 0004 | Exercises are graded with **pytest in a subprocess** using the project's interpreter |
+| 0005 | The web UI is a **React + Vite + TypeScript** single-page app, built into `src/debrief/web/` |
  
-Still open (they need an ADR before the milestone that depends on them): the frontend stack (before M2), the final name, how lesson updates are versioned, and cross-lesson concept tracking.
+Still open (they need an ADR before the milestone that depends on them): the final name, how lesson updates are versioned, and cross-lesson concept tracking.
  
 ## Core architecture in one paragraph
  
@@ -53,7 +54,7 @@ src/debrief/server/         FastAPI app, kernel manager, test runner
 src/debrief/store.py        lesson store + SQLite
 src/debrief/web/            built frontend (generated; shipped in the wheel)
 web/                        frontend source
-docs/                       spec.md, adr/
+docs/                       spec.md, adr/, design/ (UI design system and screens)
 tests/                      includes example bundles (valid + deliberately broken)
 ```
  

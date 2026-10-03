@@ -1,0 +1,12 @@
+<!-- @dsCard group="Rebuild" height=220 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>TestResult — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stack',style:{maxWidth:'640px'}},h(S.TestResult,{tests:[{name:'test_positive_coords',status:'passed'},{name:'test_cell_boundaries',status:'passed'},{name:'test_negative_coords',status:'failed',message:'assert voxel_key([-0.2, 0, 0], 0.5)[0] == -1\n  got 0'}]})));
+</script>
+</body>
+</html>

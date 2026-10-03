@@ -1,0 +1,94 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Synapto</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--surface); color:var(--ink); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:496px; height:288px; }
+  .accent { fill:var(--accent); }
+  .deep { fill:var(--accent-deep); }
+  .tint { fill:var(--accent-soft); stroke:var(--accent-deep); stroke-width:1; }
+  .node { fill:var(--glow); }
+  .cut { fill:var(--surface); }
+  .blk { rx:var(--radius-lg); }
+  .words { position:absolute; left:var(--space-6); bottom:var(--space-6); max-width:440px; }
+  .name { margin:0; font-family:var(--font-display); font-size:96px; line-height:.92; font-weight:600; letter-spacing:-.01em; color:var(--ink); }
+  .tag { margin:var(--space-3) 0 0 4px; font-size:14px; line-height:20px; color:var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 496 288" width="496" height="288">
+<!--
+  blocks      accent 176x240 bled off the top (the signal teal, largest) - accent-deep 128x160 (the logo's deeper strands) - accent-soft 144x128 bleeding off the right, edged accent-deep so it holds on the dark ground - one glow node r=space-2 (the lit synapse)
+  arrangement one tall accent slab with satellites stepping down to the right, space-4 gutters, bottoms on a falling line like the logo's strands
+  pattern     dot grid cut into the accent slab in surface, from "precise, technical, a 4px grid": r=2 dots at a space-5 (24px) pitch, 48 units
+  scales      sides in space-4 multiples; gutters space-4; pitch space-5; corners radius-lg; node radius-full
+-->
+<rect class="accent blk" x="16" y="-16" width="176" height="240" rx="12"/>
+<circle class="cut" cx="36" cy="12" r="2"/>
+<circle class="cut" cx="36" cy="36" r="2"/>
+<circle class="cut" cx="36" cy="60" r="2"/>
+<circle class="cut" cx="36" cy="84" r="2"/>
+<circle class="cut" cx="36" cy="108" r="2"/>
+<circle class="cut" cx="36" cy="132" r="2"/>
+<circle class="cut" cx="36" cy="156" r="2"/>
+<circle class="cut" cx="36" cy="180" r="2"/>
+<circle class="cut" cx="60" cy="12" r="2"/>
+<circle class="cut" cx="60" cy="36" r="2"/>
+<circle class="cut" cx="60" cy="60" r="2"/>
+<circle class="cut" cx="60" cy="84" r="2"/>
+<circle class="cut" cx="60" cy="108" r="2"/>
+<circle class="cut" cx="60" cy="132" r="2"/>
+<circle class="cut" cx="60" cy="156" r="2"/>
+<circle class="cut" cx="60" cy="180" r="2"/>
+<circle class="cut" cx="84" cy="12" r="2"/>
+<circle class="cut" cx="84" cy="36" r="2"/>
+<circle class="cut" cx="84" cy="60" r="2"/>
+<circle class="cut" cx="84" cy="84" r="2"/>
+<circle class="cut" cx="84" cy="108" r="2"/>
+<circle class="cut" cx="84" cy="132" r="2"/>
+<circle class="cut" cx="84" cy="156" r="2"/>
+<circle class="cut" cx="84" cy="180" r="2"/>
+<circle class="cut" cx="108" cy="12" r="2"/>
+<circle class="cut" cx="108" cy="36" r="2"/>
+<circle class="cut" cx="108" cy="60" r="2"/>
+<circle class="cut" cx="108" cy="84" r="2"/>
+<circle class="cut" cx="108" cy="108" r="2"/>
+<circle class="cut" cx="108" cy="132" r="2"/>
+<circle class="cut" cx="108" cy="156" r="2"/>
+<circle class="cut" cx="108" cy="180" r="2"/>
+<circle class="cut" cx="132" cy="12" r="2"/>
+<circle class="cut" cx="132" cy="36" r="2"/>
+<circle class="cut" cx="132" cy="60" r="2"/>
+<circle class="cut" cx="132" cy="84" r="2"/>
+<circle class="cut" cx="132" cy="108" r="2"/>
+<circle class="cut" cx="132" cy="132" r="2"/>
+<circle class="cut" cx="132" cy="156" r="2"/>
+<circle class="cut" cx="132" cy="180" r="2"/>
+<circle class="cut" cx="156" cy="12" r="2"/>
+<circle class="cut" cx="156" cy="36" r="2"/>
+<circle class="cut" cx="156" cy="60" r="2"/>
+<circle class="cut" cx="156" cy="84" r="2"/>
+<circle class="cut" cx="156" cy="108" r="2"/>
+<circle class="cut" cx="156" cy="132" r="2"/>
+<circle class="cut" cx="156" cy="156" r="2"/>
+<circle class="cut" cx="156" cy="180" r="2"/>
+<rect class="deep blk" x="208" y="64" width="128" height="160" rx="12"/>
+<rect class="tint blk" x="352" y="128" width="160" height="128" rx="12"/>
+<circle class="node" cx="272" cy="32" r="8"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Synapto</h1>
+<p class="tag">Understand the code your agent wrote.</p>
+</div>
+</div>
+</body>
+</html>

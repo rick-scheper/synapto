@@ -60,6 +60,28 @@ def publish(
     typer.echo(f"Lesson URL: {lesson_url(lesson.id)}")
 
 
+@app.command()
+def serve(
+    port: Annotated[int, typer.Option(help="Port on 127.0.0.1 to serve the hub on.")] = DEFAULT_PORT,
+    open_browser: Annotated[
+        bool, typer.Option("--open", help="Open the hub in the browser once it's up.")
+    ] = False,
+) -> None:
+    """Start the hub on 127.0.0.1 (the only interface it binds to)."""
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    from debrief.server.app import create_app
+
+    url = f"http://127.0.0.1:{port}/"
+    if open_browser:
+        threading.Timer(1.0, webbrowser.open, (url,)).start()
+    typer.echo(f"debrief hub: {url}")
+    uvicorn.run(create_app(), host="127.0.0.1", port=port, log_level="warning")
+
+
 def lesson_url(lesson_id: str) -> str:
     return f"http://127.0.0.1:{DEFAULT_PORT}/lessons/{lesson_id}"
 

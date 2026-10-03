@@ -1,0 +1,12 @@
+<!-- @dsCard group="Status" height=80 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ProgressRing — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stage'},h(S.ProgressRing,{value:0}),h(S.ProgressRing,{value:.35}),h(S.ProgressRing,{value:.8}),h(S.ProgressRing,{value:1}),h(S.ProgressRing,{value:.6,size:24,stroke:3})));
+</script>
+</body>
+</html>

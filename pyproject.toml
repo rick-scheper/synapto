@@ -6,10 +6,14 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 dependencies = [
+    "fastapi>=0.115",
     "jupyter_client>=8.6",
     "nbformat>=5.10",
     "pydantic>=2.7",
     "typer>=0.12",
+    "uvicorn>=0.30",
+    # uvicorn needs it to serve the kernel WebSocket (spec §9.1).
+    "websockets>=13",
 ]
 
 [project.scripts]
@@ -22,6 +26,7 @@ dev = [
     # The test suite uses the dev venv as the "project venv", so it needs
     # what debrief doctor requires of a project interpreter.
     "ipykernel>=6.29",
+    "httpx>=0.27",
 ]
 
 [build-system]
@@ -30,6 +35,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/debrief"]
+# The built web UI is gitignored but ships in the wheel (ADR-0005).
+artifacts = ["src/debrief/web/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

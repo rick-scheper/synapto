@@ -6,3 +6,4 @@
 | [0002](0002-notebook-as-ipynb.md) | Store the dissected code as a standard .ipynb notebook | Accepted |
 | [0003](0003-central-lesson-store.md) | Keep published lessons in one central store per user | Accepted |
 | [0004](0004-grade-exercises-with-pytest.md) | Grade "rebuild" exercises with pytest in the project venv | Accepted |
+| [0005](0005-frontend-react-vite.md) | Build the web UI as a React + Vite + TypeScript single-page app | Accepted |

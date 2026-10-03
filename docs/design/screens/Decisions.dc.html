@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Synapto — Lesson decisions</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/synapto/components/bundle.css">
+<script src="ds/synapto/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+:root,.t-dark{--surface:#18202a;--surface-raised:#202a35;--surface-sunken:#11171f;--line:#2c3846;--line-strong:#6a7c8f;--ink:#edf2f6;--ink-muted:#9ba9b7;--accent:#45e6df;--accent-soft:#113a3f;--on-accent:#06201f;--glow:#5afef5;--accent-deep:#2aa3b0;--success:#4cdb9a;--success-soft:#10372a;--warning:#f2c35b;--warning-soft:#3a2e10;--danger:#ff8a8a;--danger-soft:#40191d;--code-keyword:#f2a07b;--code-string:#a3e3a9;--code-number:#f2c35b;--code-function:#5afef5;--code-comment:#8593a1;--link:var(--accent);--focus:var(--accent);--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:64px;--radius-sm:4px;--radius-md:8px;--radius-lg:12px;--radius-full:999px;--reading-width:720px;--notebook-width:960px;--page-max:1280px;--sidebar-width:272px;--header-height:56px;--control-height:36px;--shadow-raised:0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.25);--shadow-glow:0 0 0 1px rgba(90,254,245,0.55), 0 0 18px rgba(90,254,245,0.28);--shadow-focus:0 0 0 2px #18202a, 0 0 0 4px #45e6df;--font-display:Montserrat, "Avenir Next", "Century Gothic", system-ui, sans-serif;--font-sans:Inter, system-ui, -apple-system, "Segoe UI", sans-serif;--font-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;}
+.t-light{--surface:#f5f7f8;--surface-raised:#ffffff;--surface-sunken:#ecf0f3;--line:#d9e0e5;--line-strong:#77889a;--ink:#14202a;--ink-muted:#4f5e6b;--accent:#08757d;--accent-soft:#d9f4f2;--on-accent:#ffffff;--glow:#5afef5;--accent-deep:#177285;--success:#1b7448;--success-soft:#dcf3e6;--warning:#8a5600;--warning-soft:#fbefd5;--danger:#b8283a;--danger-soft:#fbe2e4;--code-keyword:#a8401a;--code-string:#2a6f37;--code-number:#8a5600;--code-function:#08757d;--code-comment:#5d6a76;--link:#08757d;--focus:#08757d;--shadow-raised:0 1px 2px rgba(20,32,42,0.06), 0 4px 16px rgba(20,32,42,0.06);--shadow-glow:0 0 0 1px rgba(8,117,125,0.45), 0 0 14px rgba(8,117,125,0.18);--shadow-focus:0 0 0 2px #ffffff, 0 0 0 4px #08757d;}
+.t-light a:hover{color:#055a60}
+body{margin:0;background:var(--surface)}
+a{color:var(--accent)}a:hover{color:var(--glow)}
+.sy-decision{max-width:none}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="min-height: 1500px; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 16px; line-height: 26px">
+
+<header style="height: 56px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: center; padding: 0 32px">
+<div style="width: 100%; max-width: 1280px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink)">
+<img src="/_blob/60a25a56ca464905442a65578a30f911" alt="" style="width: 28px; height: 28px; border-radius: 6px">
+<span style="font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: 0.02em">Synapto</span>
+</a>
+<nav style="display: flex; gap: 4px">
+<a href="Main.dc.html" style="font-size: 13px; font-weight: 500; color: var(--ink); text-decoration: none; padding: 6px 12px; border-radius: 8px; background: var(--surface-raised)">Lessons</a>
+<a href="#" style="font-size: 13px; font-weight: 500; color: var(--ink-muted); text-decoration: none; padding: 6px 12px; border-radius: 8px">Progress</a>
+</nav>
+<div style="flex-grow: 1"></div>
+<button type="button" aria-label="Toggle light and dark theme" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink-muted); display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></button>
+</div>
+</header>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 32px 32px 64px; display: flex; flex-direction: column; gap: 24px">
+
+<a href="Main.dc.html" style="font-size: 13px; font-weight: 500; text-decoration: none; color: var(--ink-muted); display: inline-flex; align-items: center; gap: 6px; align-self: flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>All lessons</a>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted)">Lesson · Intermediate · 3 Oct 2026</div>
+<h1 style="margin: 0; font-family: var(--font-display); font-size: 32px; line-height: 40px; font-weight: 600">Voxel downsampling with an octree</h1>
+</section>
+
+<x-import component-from-global-scope="Synapto.Tabs" value="decisions" items="{{tabs}}"></x-import>
+
+<main style="width: 100%; max-width: 720px; margin: 16px auto 0; display: flex; flex-direction: column; gap: 16px">
+<p style="margin: 0 0 8px; color: var(--ink-muted)">Two choices the agent made while building this, with the options it rejected. Disagree with one? <strong style="color: var(--ink); font-weight: 600">Revisit decision</strong> copies a prompt you can paste into Claude Code to challenge it.</p>
+
+<x-import component-from-global-scope="Synapto.DecisionCard" title="Spatial index for downsampling" context="Points must be grouped per voxel. Clouds are 1–50 M points and only one resolution is needed." options="{{d1}}" chosen="B" why="One vectorised pass with no tree to build or traverse; only the per-voxel means are needed." tradeoffs="No neighbour queries and no multiple levels of detail. Revisit if level-of-detail tiles are added."></x-import>
+
+<x-import component-from-global-scope="Synapto.DecisionCard" title="Which point represents a voxel" context="Each occupied voxel becomes exactly one output point." options="{{d2}}" chosen="A" why="The mean is smooth, cheap with np.add.at, and good enough as input for ground filtering and meshing." tradeoffs="Output points are not original survey points; attributes like intensity can't be carried over unchanged."></x-import>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      themeClass: this.props.theme === 'light' ? 't-light' : 't-dark',
+      tabs: [{ id: 'explain', label: 'Explain' }, { id: 'decisions', label: 'Decisions', count: 2 }, { id: 'notebook', label: 'Notebook' }, { id: 'quiz', label: 'Quiz', count: 3 }, { id: 'rebuild', label: 'Rebuild', count: 1 }],
+      d1: [{ id: 'A', label: 'A real octree data structure' }, { id: 'B', label: 'Hash of integer voxel keys with np.unique' }, { id: 'C', label: 'scipy.spatial.cKDTree' }],
+      d2: [{ id: 'A', label: 'Mean of the points in the voxel' }, { id: 'B', label: 'Point nearest to the voxel centre' }, { id: 'C', label: 'First point encountered' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!-- @dsCard group="Content" height=230 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>LessonCard — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stage',style:{alignItems:'flex-start'}},h(S.LessonCard,{date:'3 Oct 2026',difficulty:'Intermediate',title:'Voxel downsampling with an octree',summary:'How the new downsample() bins points into voxels with integer floor division and averages each cell in one vectorised pass.',concepts:['octree','spatial hashing','numpy'],progress:.6,repo:'~/code/pointtools · feat/downsample'}),h(S.LessonCard,{date:'28 Sep 2026',difficulty:'Easy',title:'Retry with exponential backoff',summary:'A small decorator that retries flaky HTTP calls.',concepts:['decorators','backoff'],progress:1,stale:true,repo:'~/code/tenders'})));
+</script>
+</body>
+</html>

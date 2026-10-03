@@ -1,0 +1,12 @@
+<!-- @dsCard group="Navigation" height=80 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Tabs — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render((function(){function T(){var st=React.useState('notebook');return h('div',{style:{padding:'24px'}},h(S.Tabs,{value:st[0],onChange:st[1],items:[{id:'explain',label:'Explain'},{id:'decisions',label:'Decisions',count:3},{id:'notebook',label:'Notebook'},{id:'quiz',label:'Quiz',count:7},{id:'rebuild',label:'Rebuild',count:2}]}))}return h(T)})());
+</script>
+</body>
+</html>

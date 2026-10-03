@@ -1,0 +1,89 @@
+/* Synapto tokens — generated from tokens.json. Dark is the default theme.
+   Switch with <html data-theme="light">. */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root, [data-theme="dark"] {
+  --surface: #18202a;
+  --surface-raised: #202a35;
+  --surface-sunken: #11171f;
+  --line: #2c3846;
+  --line-strong: #6a7c8f;
+  --ink: #edf2f6;
+  --ink-muted: #9ba9b7;
+  --accent: #45e6df;
+  --accent-soft: #113a3f;
+  --on-accent: #06201f;
+  --glow: #5afef5;
+  --accent-deep: #2aa3b0;
+  --success: #4cdb9a;
+  --success-soft: #10372a;
+  --warning: #f2c35b;
+  --warning-soft: #3a2e10;
+  --danger: #ff8a8a;
+  --danger-soft: #40191d;
+  --code-keyword: #f2a07b;
+  --code-string: #a3e3a9;
+  --code-number: #f2c35b;
+  --code-function: #5afef5;
+  --code-comment: #8593a1;
+  --link: var(--accent);
+  --focus: var(--accent);
+  --shadow-raised: 0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.25);
+  --shadow-glow: 0 0 0 1px rgba(90,254,245,0.55), 0 0 18px rgba(90,254,245,0.28);
+  --shadow-focus: 0 0 0 2px #18202a, 0 0 0 4px #45e6df;
+}
+
+[data-theme="light"] {
+  --surface: #f5f7f8;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ecf0f3;
+  --line: #d9e0e5;
+  --line-strong: #77889a;
+  --ink: #14202a;
+  --ink-muted: #4f5e6b;
+  --accent: #08757d;
+  --accent-soft: #d9f4f2;
+  --on-accent: #ffffff;
+  --glow: #5afef5;
+  --accent-deep: #177285;
+  --success: #1b7448;
+  --success-soft: #dcf3e6;
+  --warning: #8a5600;
+  --warning-soft: #fbefd5;
+  --danger: #b8283a;
+  --danger-soft: #fbe2e4;
+  --code-keyword: #a8401a;
+  --code-string: #2a6f37;
+  --code-number: #8a5600;
+  --code-function: #08757d;
+  --code-comment: #5d6a76;
+  --link: var(--accent);
+  --focus: var(--accent);
+  --shadow-raised: 0 1px 2px rgba(20,32,42,0.06), 0 4px 16px rgba(20,32,42,0.06);
+  --shadow-glow: 0 0 0 1px rgba(8,117,125,0.45), 0 0 14px rgba(8,117,125,0.18);
+  --shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #08757d;
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+  --reading-width: 720px;
+  --notebook-width: 960px;
+  --page-max: 1280px;
+  --sidebar-width: 272px;
+  --header-height: 56px;
+  --control-height: 36px;
+  --font-display: Montserrat, "Avenir Next", "Century Gothic", system-ui, sans-serif;
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}

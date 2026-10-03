@@ -1,0 +1,12 @@
+<!-- @dsCard group="Status" height=72 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Badge — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stage'},h(S.Badge,null,'intermediate'),h(S.Badge,{tone:'accent'},'spatial hashing'),h(S.Badge,{tone:'success'},'Completed'),h(S.Badge,{tone:'warning'},'Stale'),h(S.Badge,{tone:'danger'},'2 failing')));
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!-- @dsCard group="Status" height=170 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Callout — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stack'},h(S.Callout,{tone:'warning',title:'The code has changed since this lesson',action:h(S.Button,{size:'sm'},'Show diff')},'2 files differ from head commit e4f5a6b.'),h(S.Callout,{title:'Hint 1 of 2'},'Think about negative coordinates.'),h(S.Callout,{tone:'success',title:'All tests passed'},'You rebuilt voxel_key in 2 attempts.')));
+</script>
+</body>
+</html>

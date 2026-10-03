@@ -1,0 +1,12 @@
+<!-- @dsCard group="Inputs" height=110 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>TextField — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stage',style:{alignItems:'flex-start'}},h(S.TextField,{label:'input_las',mono:true,defaultValue:'fixtures/sample_1k.las',hint:'A LAS/LAZ point cloud to downsample.'}),h(S.TextField,{label:'voxel_size',mono:true,defaultValue:'-0.5',error:'Must be a positive number'})));
+</script>
+</body>
+</html>

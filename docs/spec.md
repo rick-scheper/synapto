@@ -112,7 +112,7 @@ debrief/
 └── tests/
 ```
 
-Decisions behind this design: [ADR-0001](adr/0001-execute-code-in-project-venv-kernel.md) (execution), [ADR-0002](adr/0002-notebook-as-ipynb.md) (notebook format), [ADR-0003](adr/0003-central-lesson-store.md) (lesson storage), [ADR-0004](adr/0004-grade-exercises-with-pytest.md) (grading).
+Decisions behind this design: [ADR-0001](adr/0001-execute-code-in-project-venv-kernel.md) (execution), [ADR-0002](adr/0002-notebook-as-ipynb.md) (notebook format), [ADR-0003](adr/0003-central-lesson-store.md) (lesson storage), [ADR-0004](adr/0004-grade-exercises-with-pytest.md) (grading), [ADR-0005](adr/0005-frontend-react-vite.md) (frontend).
 
 ## 5. Lesson bundle format
 
@@ -358,7 +358,8 @@ FastAPI, served by uvicorn and bound to `127.0.0.1` only. It also serves the bui
 | method | path | purpose |
 |---|---|---|
 | GET | `/api/lessons` | list, with filters `repo` and `concept` |
-| GET | `/api/lessons/{id}` | `lesson.json` plus progress and staleness |
+| GET | `/api/lessons/{id}` | `lesson.json` plus progress, staleness and the latest quiz answers; records that the lesson was opened |
+| GET | `/api/lessons/{id}/decisions` | `decisions.md` parsed into one record per decision (§5.3), with the raw Markdown kept for sections that don't follow the template |
 | GET | `/api/lessons/{id}/files/{path}` | raw bundle files (markdown, svg, fixtures) |
 | GET / PUT | `/api/lessons/{id}/notebook` | the learner's working copy. GET falls back to the original |
 | POST | `/api/lessons/{id}/notebook/reset` | discards the working copy |
@@ -368,8 +369,9 @@ FastAPI, served by uvicorn and bound to `127.0.0.1` only. It also serves the bui
 | DELETE | `/api/lessons/{id}/kernel` | shuts the kernel down |
 | WS | `/api/lessons/{id}/kernel/ws` | execute requests in, streamed outputs out (stdout, display_data, errors) |
 | POST | `/api/lessons/{id}/quiz/{qid}/answer` | records an answer and returns correct or wrong plus the explanation |
-| POST | `/api/lessons/{id}/exercises/{eid}/run` | body `{code}` → per-test results |
-| GET / PUT | `/api/lessons/{id}/exercises/{eid}/draft` | the learner's in-progress code |
+| GET | `/api/lessons/{id}/exercises` | each exercise's `exercise.json`, `stub.py`, past runs (the attempt count) and whether it has passed |
+| POST | `/api/lessons/{id}/exercises/{eid}/run` | body `{code}` → per-test results; records the run and keeps the code as the draft |
+| GET / PUT | `/api/lessons/{id}/exercises/{eid}/draft` | the learner's in-progress code. GET falls back to `stub.py` |
 | GET | `/api/progress` | totals across lessons and concepts |
 
 ### 9.2 Kernel manager
@@ -377,7 +379,7 @@ FastAPI, served by uvicorn and bound to `127.0.0.1` only. It also serves the bui
 - Uses `jupyter_client.AsyncKernelManager` with `kernel_cmd = [<environment.python>, "-m", "ipykernel_launcher", "-f", "{connection_file}"]`.
 - The working directory is `environment.cwd`. `environment.extra_sys_path` and the bundle directory are prepended to `sys.path` in the preamble.
 - There is one kernel per open lesson. Idle kernels shut down after 30 minutes. At most 3 kernels run at once, and the least recently used is evicted first.
-- WebSocket messages are a thin translation of Jupyter `execute_request` and iopub messages into a small JSON protocol (`{type: "stream" | "display" | "error" | "status", ...}`).
+- WebSocket messages are a thin translation of Jupyter `execute_request` and iopub messages into a small JSON protocol. In: `{type: "execute", id, code}` and `{type: "interrupt"}`. Out, tagged with the request's `id`: `{type: "kernel", session}` first, then `"stream" | "display" | "error" | "clear" | "status"` events, and always `{type: "done", status}` last. A new `session` means a fresh kernel (restart, idle shutdown or eviction). Requests run one at a time; a socket request starts the kernel if it isn't running.
 
 ### 9.3 Test runner
 
@@ -412,6 +414,7 @@ Published bundles are immutable. Everything the learner changes lives in SQLite,
 
 - debrief executes code from lessons with the developer's own permissions, on purpose. Lessons are generated from the developer's own projects.
 - The server binds to `127.0.0.1` only. There is no option to bind elsewhere in v1.
+- Because the kernel socket runs code, the server answers only requests whose `Host` is `127.0.0.1` or `localhost` (against DNS rebinding), and refuses WebSockets and non-GET requests whose `Origin` is another site (against cross-site requests from pages open in the browser).
 - When importing a bundle that wasn't generated locally (a future feature), show a clear warning that it will run that code.
 
 ## 12. Web UI
@@ -426,7 +429,7 @@ Pages:
   - **Quiz:** one question at a time, with an explanation after each answer and a score at the end.
   - **Rebuild:** the exercise prompt, hints revealed one by one, an editor preloaded with `stub.py`, a "Run tests" button, per-test results, and a "Show solution" button that becomes available after 3 attempts.
 
-Frontend stack: not yet decided. See §14.
+Frontend stack: a React + Vite + TypeScript single-page app ([ADR-0005](adr/0005-frontend-react-vite.md)), built into `src/debrief/web/`.
 
 ## 13. Milestones
 
@@ -445,7 +448,6 @@ The skill and the validator come first because the bundle is the contract. Once 
 
 These need ADRs before the milestone that depends on them:
 
-- **Frontend stack** (before M2): e.g. React + Vite + CodeMirror 6 vs. a lighter option such as HTMX + server templates.
 - **Package/project name** (before M5): `debrief` is a working name.
 - **Lesson updates**: when the code changes, should `/debrief` regenerate a lesson as a new version or as a new lesson?
 - **Cross-lesson concept tracking**: build a concept graph from `concepts` across lessons (post-v1).

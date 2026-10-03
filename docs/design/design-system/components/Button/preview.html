@@ -1,0 +1,12 @@
+<!-- @dsCard group="Actions" height=96 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Button — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stage'},h(S.Button,{variant:'primary',icon:'\u25b6'},'Run all'),h(S.Button,null,'Restart kernel'),h(S.Button,{variant:'ghost'},'Show hint'),h(S.Button,{variant:'danger'},'Reset notebook'),h(S.Button,{variant:'primary',size:'sm'},'Run tests'),h(S.Button,{disabled:true},'Show solution')));
+</script>
+</body>
+</html>

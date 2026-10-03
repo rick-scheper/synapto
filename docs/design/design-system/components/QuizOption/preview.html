@@ -1,0 +1,12 @@
+<!-- @dsCard group="Quiz" height=250 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>QuizOption — preview</title></head>
+<body>
+<div id="root"></div>
+<script>
+  var S = window.Synapto, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'sy-stack',style:{gap:'8px',maxWidth:'640px'}},h(S.QuizOption,{optionId:'a',state:'wrong',disabled:true},'Rounding is slower than floor division in NumPy'),h(S.QuizOption,{optionId:'b',state:'correct',disabled:true},'Floor keeps every point in [k·size, (k+1)·size), including negative coordinates'),h(S.QuizOption,{optionId:'c',state:'idle',disabled:true},'Integer keys use less memory than float keys'),h(S.QuizOption,{optionId:'d',state:'selected'},'Selected, before checking')));
+</script>
+</body>
+</html>

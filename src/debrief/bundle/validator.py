@@ -440,26 +440,8 @@ class _Validator:
                 ok = False
         return ok
 
-    def default_data(self, lesson: Lesson) -> dict[str, str | int | float]:
-        data: dict[str, str | int | float] = {}
-        for slot in lesson.data_slots:
-            if slot.default is None:
-                continue
-            if slot.kind in ("file", "dir"):
-                data[slot.name] = str((self.bundle / str(slot.default)).resolve())
-            else:
-                data[slot.name] = slot.default
-        return data
-
     async def run_notebook(self, lesson: Lesson, cells: list[tuple[int, Any, CellMeta]]) -> None:
-        env = lesson.environment
-        kernel = LessonKernel(KernelConfig(
-            python=Path(env.python),
-            cwd=Path(env.cwd),
-            lesson_dir=self.bundle,
-            extra_sys_path=tuple(env.extra_sys_path),
-            data=self.default_data(lesson),
-        ))
+        kernel = LessonKernel(KernelConfig.for_lesson(lesson, self.bundle))
         try:
             await kernel.start()
         except KernelError as exc:

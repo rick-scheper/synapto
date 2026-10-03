@@ -28,6 +28,7 @@ import asyncio
 import math
 import queue
 import time
+import uuid
 from collections.abc import AsyncIterator, Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -38,6 +39,7 @@ from jupyter_client.kernelspec import KernelSpec
 from jupyter_client.manager import AsyncKernelManager
 from traitlets import Unicode
 
+from debrief.bundle.models import Lesson
 from debrief.environment import check_interpreter, interpreter_path, project_env
 
 KernelEvent = dict[str, Any]
@@ -79,10 +81,44 @@ class KernelConfig:
         object.__setattr__(self, "extra_sys_path", tuple(self.extra_sys_path))
         object.__setattr__(self, "data", dict(self.data))
 
+    @classmethod
+    def for_lesson(
+        cls, lesson: Lesson, lesson_dir: Path, values: Mapping[str, DataValue] | None = None
+    ) -> KernelConfig:
+        """The config for a lesson's kernel, with ``values`` chosen by the learner (see ``resolve_data``)."""
+        env = lesson.environment
+        return cls(
+            python=Path(env.python),
+            cwd=Path(env.cwd),
+            lesson_dir=lesson_dir,
+            extra_sys_path=tuple(env.extra_sys_path),
+            data=resolve_data(lesson, lesson_dir, values),
+        )
+
     def sys_path_entries(self) -> list[str]:
         """Absolute paths prepended to the kernel's ``sys.path``, in order."""
         entries = [str((self.cwd / p).resolve()) for p in self.extra_sys_path]
         return [*entries, str(self.lesson_dir)]
+
+
+def resolve_data(
+    lesson: Lesson, lesson_dir: Path, values: Mapping[str, DataValue] | None = None
+) -> dict[str, DataValue]:
+    """``DEBRIEF_DATA`` for a lesson: the learner's value for each slot, else its default.
+
+    A file or dir default points inside the bundle, so it becomes an absolute path
+    in ``lesson_dir``. Slots with neither a value nor a default are left out.
+    """
+    values = values or {}
+    data: dict[str, DataValue] = {}
+    for slot in lesson.data_slots:
+        if slot.name in values:
+            data[slot.name] = values[slot.name]
+        elif slot.default is not None and slot.kind in ("file", "dir"):
+            data[slot.name] = str((Path(lesson_dir) / str(slot.default)).resolve())
+        elif slot.default is not None:
+            data[slot.name] = slot.default
+    return data
 
 
 def build_preamble(config: KernelConfig) -> str:
@@ -168,6 +204,8 @@ class LessonKernel:
         self._kc: AsyncKernelClient | None = None
         self._exec_lock = asyncio.Lock()
         self.last_used = clock()
+        self.session = ""
+        """A new id each time a kernel process starts, so clients can tell a fresh kernel."""
 
     @property
     def started(self) -> bool:
@@ -193,6 +231,7 @@ class LessonKernel:
         if not self.config.cwd.is_dir():
             raise KernelStartError(f"environment.cwd {self.config.cwd} is not a directory")
 
+        self.session = uuid.uuid4().hex
         km = ProjectKernelManager(python=str(python), shutdown_wait_time=2.0)
         await km.start_kernel(cwd=str(self.config.cwd), env=project_env(python))
         kc = km.client()
