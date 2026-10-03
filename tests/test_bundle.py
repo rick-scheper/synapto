@@ -2,8 +2,8 @@
 
 The example lives in ``tests/example``: ``project/`` stands in for a developer's
 repo (package ``gridsnap``) and ``bundle/`` is a lesson about it. Each test
-copies both to a temp dir and points ``lesson.json`` at the copy and at the
-``project_python`` venv.
+copies both to a temp dir (the ``bundle`` fixture in conftest) and points
+``lesson.json`` at the copy and at the ``project_python`` venv.
 """
 
 import json
@@ -19,8 +19,6 @@ from typer.testing import CliRunner
 from debrief.bundle.validator import validate_bundle
 from debrief.cli import app
 
-EXAMPLE = Path(__file__).parent / "example"
-
 
 def edit_json(path: Path, change: Callable[[dict], object]) -> None:
     data = json.loads(path.read_text())
@@ -32,19 +30,6 @@ def edit_text(path: Path, old: str, new: str) -> None:
     text = path.read_text()
     assert old in text, f"{old!r} not in {path}"
     path.write_text(text.replace(old, new))
-
-
-@pytest.fixture
-def bundle(tmp_path: Path, project_python: Path) -> Path:
-    project = shutil.copytree(EXAMPLE / "project", tmp_path / "project")
-    bundle = shutil.copytree(EXAMPLE / "bundle", tmp_path / "bundle")
-
-    def point_at_copy(lesson: dict) -> None:
-        lesson["source"]["repo_path"] = str(project)
-        lesson["environment"].update(python=str(project_python), cwd=str(project))
-
-    edit_json(bundle / "lesson.json", point_at_copy)
-    return bundle
 
 
 def messages(bundle: Path, execute: bool = False) -> list[str]:

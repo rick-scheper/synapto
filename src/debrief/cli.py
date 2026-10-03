@@ -7,8 +7,12 @@ from typing import Annotated
 
 import typer
 
+from debrief.bundle.models import Lesson
 from debrief.bundle.validator import validate_bundle
 from debrief.environment import check_interpreter, find_project_python
+from debrief.store import LessonExistsError, LessonStore
+
+DEFAULT_PORT = 8765  # debrief serve (spec §7)
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -26,6 +30,42 @@ def validate(
 
     Prints one issue per line as file:location: message. Exit code 0 means valid.
     """
+    if not _check(bundle):
+        raise typer.Exit(1)
+
+
+@app.command()
+def publish(
+    bundle: Annotated[Path, typer.Argument(help="The lesson bundle folder to publish.")],
+    force: Annotated[
+        bool, typer.Option("--force", help="Replace a published lesson with the same id.")
+    ] = False,
+) -> None:
+    """Validate a lesson bundle, copy it into the lesson store and index it."""
+    if not _check(bundle):
+        typer.echo("Not published: fix the errors above and publish again.")
+        raise typer.Exit(1)
+
+    lesson = Lesson.model_validate_json((bundle / "lesson.json").read_bytes())
+    store = LessonStore.default()
+    try:
+        target = store.publish(bundle, lesson, force=force)
+    except LessonExistsError as exc:
+        typer.echo(f'lesson.json:id: lesson {exc.lesson_id!r} is already published in '
+                   f'{store.lessons_dir}. Set "id" to "{exc.free_id}" and publish again, '
+                   "or pass --force to replace it.")
+        raise typer.Exit(1) from None
+
+    typer.echo(f"\nPublished {lesson.id} to {target}")
+    typer.echo(f"Lesson URL: {lesson_url(lesson.id)}")
+
+
+def lesson_url(lesson_id: str) -> str:
+    return f"http://127.0.0.1:{DEFAULT_PORT}/lessons/{lesson_id}"
+
+
+def _check(bundle: Path) -> bool:
+    """Validate ``bundle`` and print the report. True if it's valid."""
     report = validate_bundle(bundle)
     for issue in report.issues:
         typer.echo(str(issue))
@@ -35,12 +75,12 @@ def validate(
     if report.ok:
         gap = "\n" if report.issues else ""
         typer.echo(f"{gap}{bundle}: valid" + (f" ({warnings})" if n_warnings else ""))
-        return
+        return True
     if not report.executed:
         typer.echo("\nThe notebook and exercise tests were not run: lesson.json or its "
                    "environment has errors. Fix those first.")
     typer.echo(f"\n{bundle}: {n_errors} error{'s' * (n_errors != 1)}, {warnings}")
-    raise typer.Exit(1)
+    return False
 
 
 @app.command()

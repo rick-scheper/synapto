@@ -1,9 +1,13 @@
+import json
+import shutil
 import subprocess
 import sys
 import sysconfig
 from pathlib import Path
 
 import pytest
+
+EXAMPLE = Path(__file__).parent / "example"
 
 # The example bundle's test_exercise.py files run against candidate.py via debrief validate.
 collect_ignore = ["example"]
@@ -37,3 +41,16 @@ def bare_python(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """A venv without ipykernel or pytest."""
     python, _ = _make_venv(tmp_path_factory.mktemp("bare") / ".venv")
     return python
+
+
+@pytest.fixture
+def bundle(tmp_path: Path, project_python: Path) -> Path:
+    """A copy of the example bundle, pointed at a copy of its project and at ``project_python``."""
+    project = shutil.copytree(EXAMPLE / "project", tmp_path / "project")
+    bundle = shutil.copytree(EXAMPLE / "bundle", tmp_path / "bundle")
+    lesson_json = bundle / "lesson.json"
+    lesson = json.loads(lesson_json.read_text())
+    lesson["source"]["repo_path"] = str(project)
+    lesson["environment"].update(python=str(project_python), cwd=str(project))
+    lesson_json.write_text(json.dumps(lesson, indent=1))
+    return bundle
