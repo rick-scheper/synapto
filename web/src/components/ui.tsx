@@ -1,7 +1,7 @@
 // The Synapto design-system components (docs/design/design-system/components),
 // rebuilt in TSX. Styles are the `sy-*` classes in components.css.
 
-import { useId, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useId, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { capitalise } from "../format";
 
 const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(" ");
@@ -27,6 +27,35 @@ export function Button({
       )}
       {children}
     </button>
+  );
+}
+
+/** A button that copies `text` to the clipboard and says so for a moment. */
+export function CopyButton({
+  text,
+  icon,
+  copied = "Copied",
+  children,
+}: {
+  text: string;
+  icon: ReactNode;
+  copied?: string;
+  children: ReactNode;
+}) {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setState("copied");
+    } catch {
+      setState("failed");
+    }
+    setTimeout(() => setState("idle"), 2500);
+  };
+  return (
+    <Button size="sm" icon={state === "copied" ? "✓" : icon} onClick={copy}>
+      {state === "copied" ? copied : state === "failed" ? "Couldn't copy" : children}
+    </Button>
   );
 }
 

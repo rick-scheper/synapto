@@ -33,6 +33,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 import synapto
 from synapto.bundle.decisions import Decisions, parse_decisions
 from synapto.bundle.models import Exercise, Lesson, Part
+from synapto.server.decide import Choice, DecisionError, DecisionState, decision_state, record_choice
 from synapto.server.lessons import (
     LessonSummary,
     Progress,
@@ -82,6 +83,11 @@ class LessonDetail(BaseModel):
     staleness: Staleness
     answers: dict[str, AnswerRecord]
     """The latest answer to each quiz question, by question id."""
+
+
+class ChoiceRequest(BaseModel):
+    option_id: str
+    reasoning: str
 
 
 class AnswerRequest(BaseModel):
@@ -259,6 +265,18 @@ def create_app(
         part_or_404(lesson_id, "decisions")
         return parse_decisions((store.lesson_dir(lesson_id) / "decisions.md").read_text(encoding="utf-8"))
 
+    @app.get("/api/lessons/{lesson_id}/decision")
+    def get_decision(lesson_id: str) -> DecisionState:
+        return decision_state(store, part_or_404(lesson_id, "options"))
+
+    @app.put("/api/lessons/{lesson_id}/choice")
+    def put_choice(lesson_id: str, body: ChoiceRequest) -> Choice:
+        lesson = part_or_404(lesson_id, "options")
+        try:
+            return record_choice(store, lesson, body.option_id, body.reasoning)
+        except DecisionError as exc:
+            raise HTTPException(409, str(exc)) from None
+
     @app.get("/api/lessons/{lesson_id}/files/{path:path}")
     def get_file(lesson_id: str, path: str) -> FileResponse:
         lesson_or_404(lesson_id)
@@ -307,6 +325,7 @@ def create_app(
         # A plain def: FastAPI runs it in a worker thread, so pytest doesn't block the event loop.
         lesson, folder = exercise_or_404(lesson_id, exercise_id)
         env = lesson.environment
+        assert env is not None  # a rebuild part requires it
         outcome = run_tests(body.code, folder / "test_exercise.py", env.python, Path(env.cwd), env.extra_sys_path)
         # The code that was run is the learner's latest draft.
         store.save_draft(lesson_id, exercise_id, body.code)

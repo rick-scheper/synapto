@@ -20,6 +20,8 @@ Synapto is a local learning hub. Right after an agent has built something, the d
 - take a quiz,
 - rebuild key functions from a stub until the tests pass.
 
+Synapto also teaches choices *before* anything is built ([ADR-0008](adr/0008-decision-lessons.md)). With `/decide "<question>"` (for example "which database fits this project?") the agent researches the best candidates and publishes a **decision lesson**: the problem space, the candidates compared on criteria that matter for this project, and a quiz. In **guided** mode the lesson leads to the agent's recommendation. In **open** mode the developer makes the choice and writes down why. Then `/decide review` has the agent challenge that reasoning and give its own opinion, which it wrote down before the developer chose.
+
 ### Goals
 
 - A lesson is generated with one command, after the build, from the actual diff and conversation.
@@ -128,6 +130,7 @@ A lesson has one or more **parts**, chosen by the developer at `/debrief` time a
 | `notebook` | `notebook.ipynb` (plus `fixtures/` for its data slots) |
 | `quiz` | `quiz.json` |
 | `rebuild` | `exercises/` |
+| `options` | `options.json` (decision lessons only, §5.7) |
 
 ```
 <lesson-id>/
@@ -191,6 +194,9 @@ A lesson has one or more **parts**, chosen by the developer at `/debrief` time a
 ```
 
 - `parts` is optional and defaults to all five. It must not be empty or repeat a part.
+- `kind` is `debrief` (the default) or `decision`. A decision lesson also has `question` (the developer's question, in their words) and `mode` (`guided` or `open`), and its `parts` holds `options` plus optionally `explain` and `quiz`; its default is `["explain", "options", "quiz"]`. A debrief lesson can't have `question`, `mode` or the `options` part.
+- `source` is required for a debrief lesson. A decision lesson may leave it out (there may be no repo yet); when it's given, `source.files` may be empty.
+- `environment` is required only when `parts` has `notebook` or `rebuild`.
 - `source.files[].sha256` lets the hub show a "code has changed since this lesson" banner when the repo has moved on.
 - `data_slots[].kind` is one of `file`, `dir`, `string` or `number`. A `default` must point inside the bundle (a fixture) or be a literal value.
 - `difficulty` is one of `beginner`, `intermediate` or `advanced`. `created_at` must include a timezone. `environment.python`, `environment.cwd` and `source.repo_path` are absolute paths; `source.files[].path` and `extra_sys_path` entries are relative.
@@ -311,6 +317,41 @@ There are 5–10 questions. They test understanding (why, what happens if, which
 - `solution.py`: the reference implementation, normally identical to the built code.
 - `test_exercise.py`: pytest tests that import with `from candidate import <function>`. They cover normal behaviour and at least one edge case taken from the real code's handling.
 
+### 5.7 `options.json`
+
+The `options` part of a decision lesson: the candidates, the criteria they're compared on, and the agent's recommendation.
+
+```json
+{
+  "criteria": [
+    { "id": "ops", "name": "Operational simplicity", "description": "No server to run, back up or upgrade.", "weight": 3 }
+  ],
+  "options": [
+    {
+      "id": "sqlite",
+      "name": "SQLite",
+      "summary": "An embedded, single-file SQL database.",
+      "strengths": ["Zero setup", "…"],
+      "weaknesses": ["One writer at a time", "…"],
+      "fits_when": "A single process writes and the data fits on one machine.",
+      "scores": { "ops": 5 },
+      "links": [{ "title": "Appropriate uses for SQLite", "url": "https://www.sqlite.org/whentouse.html" }]
+    }
+  ],
+  "recommendation": {
+    "option": "sqlite",
+    "why": "Markdown, tied to this project's constraints.",
+    "trade_offs": "What the choice costs.",
+    "would_change_if": "What would make another option the better choice."
+  }
+}
+```
+
+- 2–5 options and 2–8 criteria, each with a unique `id` (lowercase letters, digits and `-`).
+- `weight` is 1–3. Every option scores every criterion, 1 (poor) to 5 (excellent), and nothing else.
+- `strengths` and `weaknesses` each have at least one entry. `links` is optional.
+- `recommendation.option` is one of the option ids. In open mode the hub hides the recommendation until the review is done (§6.1).
+
 ## 6. The `/debrief` skill
 
 It ships in `plugin/skills/debrief/SKILL.md`. It takes an optional argument for scope: `/debrief`, `/debrief since a1b2c3d`, `/debrief src/pointtools/downsample.py`, optionally preceded by the parts to make: `/debrief only explain,quiz since a1b2c3d`.
@@ -327,6 +368,36 @@ Steps:
 
 The bundle is written to a temporary working directory, never into the project repo.
 
+### 6.1 The `/decide` skill
+
+It ships in `plugin/skills/decide/` (`SKILL.md`, with `decision-format.md` and `review.md`). `/decide [guided|open] "<question>" [candidate…]` makes a decision lesson; `/decide review <id>` reviews an open decision.
+
+Making a lesson:
+
+1. **Question.** Restate the question and the project context it depends on (scale, team, existing stack, constraints), read from the repo and the conversation. If it is too vague to pick criteria, ask the developer once.
+2. **Mode.** Unless the argument names it, ask whether the developer wants a recommendation (`guided`) or to decide themselves (`open`).
+3. **Candidates.** Start from the candidates the developer named, if any. Add the strongest alternatives they missed and drop ones that can't fit, saying why. Keep 2–5.
+4. **Research.** Check current facts (versions, licences, limits) against primary sources. Link them in `links`.
+5. **Write** `lesson.json`, `options.json` and the chosen parts. Write the recommendation now, in both modes, before the developer has chosen. In open mode, `explanation.md` and the quiz must not give the recommendation away.
+6. **Validate** and **publish** as in `/debrief`.
+
+Reviewing (`/decide review <id>`):
+
+1. Run `synapto decision show <id>`. If the developer hasn't recorded a choice yet, tell them to do it in the hub and stop.
+2. Challenge the choice in the terminal: 2–4 questions aimed at the weakest points of *their* reasoning, one at a time. Name a better option only after they've answered. There is no wrong choice; the point is that they can defend it.
+3. Write the verdict and store it with `synapto decision verdict <id> <file>`:
+
+   ```json
+   {
+     "final_option": "postgres",
+     "challenges": [{ "question": "…", "response": "A one-line summary of the developer's answer." }],
+     "opinion": "Markdown: the agent's view of the developer's choice and reasoning."
+   }
+   ```
+
+   `final_option` is the option the developer settles on, which may differ from their recorded choice. The hub compares it with the recommendation itself.
+4. Offer to record the decision as an ADR in the project. If the developer accepts, write it and run `synapto decision verdict <id> <file> --adr <path>` to link it.
+
 ## 7. CLI
 
 | command | does |
@@ -338,6 +409,8 @@ The bundle is written to a temporary working directory, never into the project r
 | `synapto open <id>` | opens the lesson in the browser, starting `serve` if needed |
 | `synapto doctor [--python PATH]` | checks that the project interpreter has `ipykernel` and `pytest` and prints the fix command |
 | `synapto remove <id> [--yes]` | deletes a lesson and its progress, after asking for confirmation |
+| `synapto decision show <id>` | prints a decision lesson's question, mode, options, recommendation, the developer's choice and any verdict as JSON, for `/decide review` |
+| `synapto decision verdict <id> <file> [--adr PATH]` | validates and stores a review verdict (§6.1). Fails if the developer hasn't chosen yet |
 
 The store location is `~/.synapto`. It can be overridden with `SYNAPTO_HOME`.
 
@@ -359,6 +432,7 @@ Also checked, because they make errors easier to act on:
 - **Exercises (static):** the folder count is 1–3; each has all four files; `stub.py` and `solution.py` define `function` with identical signatures; `test_exercise.py` imports from `candidate`; `stub.py` is importable when the tests run.
 - **Data slots:** a `file` or `dir` default exists in the bundle.
 - **Markdown:** `explanation.md` and `decisions.md` aren't empty.
+- **Decision lessons:** `options.json` matches §5.7, and `parts` holds only `explain`, `options` and `quiz`.
 
 Warnings (they don't fail validation): a Mermaid block fails to parse (checked if `mmdc` is installed), a cell takes more than 30 seconds to run, or a single test passes against `stub.py` (while others fail).
 
@@ -388,6 +462,8 @@ FastAPI, served by uvicorn and bound to `127.0.0.1` only. It also serves the bui
 | GET | `/api/lessons/{id}/exercises` | each exercise's `exercise.json`, `stub.py`, past runs (the attempt count) and whether it has passed |
 | POST | `/api/lessons/{id}/exercises/{eid}/run` | body `{code}` → per-test results; records the run and keeps the code as the draft |
 | GET / PUT | `/api/lessons/{id}/exercises/{eid}/draft` | the learner's in-progress code. GET falls back to `stub.py` |
+| GET | `/api/lessons/{id}/decision` | a decision lesson's question, mode, criteria, options, recommendation, choice and review. In open mode `recommendation` is `null` until the review is done |
+| PUT | `/api/lessons/{id}/choice` | records the developer's choice in an open decision lesson, body `{option_id, reasoning}`. Returns 409 for a guided lesson, an unknown option, empty reasoning, or once the review is done |
 | GET | `/api/progress` | totals across lessons and concepts |
 | POST | `/api/shutdown` | stops the server; used by `synapto serve --reload` |
 
@@ -424,6 +500,8 @@ SQLite tables:
 - `notebook_copies(lesson_id, ipynb_json, updated_at)`
 - `data_slot_values(lesson_id, slot, value)`
 - `lesson_status(lesson_id, opened_at, completed_at)`
+- `decision_choices(lesson_id, option_id, reasoning, decided_at)`
+- `decision_verdicts(lesson_id, verdict_json, adr_path, reviewed_at)`
 
 Published bundles are immutable. Everything the learner changes lives in SQLite, so "reset" is always possible.
 
@@ -438,12 +516,13 @@ Published bundles are immutable. Everything the learner changes lives in SQLite,
 
 Pages:
 
-- **Library:** lesson cards grouped by repo, with concept filters, progress rings and a staleness badge.
-- **Lesson**, with a tab for each of its parts and a "Delete lesson" button (with confirmation). A lesson without a quiz or exercises shows no progress.
+- **Library:** lesson cards grouped by repo, with concept filters, progress rings and a staleness badge. Decision lessons carry a "Decision" badge, and those without a repo are grouped under "Not yet built".
+- **Lesson**, with a tab for each of its parts and a "Delete lesson" button (with confirmation). A lesson without a quiz or exercises shows no progress. In an open decision lesson, the review counts as one more item to complete.
   - **Explain:** rendered Markdown and Mermaid. Code references link to notebook cells.
   - **Decisions:** one card per decision, each with a "Revisit" button.
   - **Notebook:** cells with run, run-all, restart and reset buttons; a data slot panel with file path inputs; and rich outputs (text, tables, images and Plotly where present).
   - **Quiz:** one question at a time, with an explanation after each answer and a score at the end.
+  - **Options:** the question, a criteria × options matrix (weights and scores), and a card per option with strengths, weaknesses, when it fits and links. In guided mode the recommendation is shown at the top. In open mode there is a "Your decision" panel instead: pick an option and write why (required). After saving, it shows the command `/decide review <id>` with a copy button. Once a verdict exists, it shows the challenges, the agent's opinion and the recommendation next to the developer's choice, plus the ADR link if there is one.
   - **Rebuild:** the exercise prompt, hints revealed one by one, an editor preloaded with `stub.py`, a "Run tests" button, per-test results, and a "Show solution" button that becomes available after 3 attempts.
 
 Frontend stack: a React + Vite + TypeScript single-page app ([ADR-0005](adr/0005-frontend-react-vite.md)), built into `src/synapto/web/`.

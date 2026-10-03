@@ -1,0 +1,104 @@
+{
+ "questions": [
+  {
+   "id": "q1",
+   "prompt": "Why does a bounding-box query need a spatial index?",
+   "options": [
+    {
+     "id": "a",
+     "text": "Option a"
+    },
+    {
+     "id": "b",
+     "text": "Option b"
+    },
+    {
+     "id": "c",
+     "text": "Option c"
+    }
+   ],
+   "correct": "b",
+   "explanation": "Because of the trade-off explained in the lesson."
+  },
+  {
+   "id": "q2",
+   "prompt": "What does 'embedded database' mean?",
+   "options": [
+    {
+     "id": "a",
+     "text": "Option a"
+    },
+    {
+     "id": "b",
+     "text": "Option b"
+    },
+    {
+     "id": "c",
+     "text": "Option c"
+    }
+   ],
+   "correct": "a",
+   "explanation": "Because of the trade-off explained in the lesson."
+  },
+  {
+   "id": "q3",
+   "prompt": "When does a client-server database pay for its operational cost?",
+   "options": [
+    {
+     "id": "a",
+     "text": "Option a"
+    },
+    {
+     "id": "b",
+     "text": "Option b"
+    },
+    {
+     "id": "c",
+     "text": "Option c"
+    }
+   ],
+   "correct": "c",
+   "explanation": "Because of the trade-off explained in the lesson."
+  },
+  {
+   "id": "q4",
+   "prompt": "What is columnar storage best at?",
+   "options": [
+    {
+     "id": "a",
+     "text": "Option a"
+    },
+    {
+     "id": "b",
+     "text": "Option b"
+    },
+    {
+     "id": "c",
+     "text": "Option c"
+    }
+   ],
+   "correct": "a",
+   "explanation": "Because of the trade-off explained in the lesson."
+  },
+  {
+   "id": "q5",
+   "prompt": "What limits SQLite under concurrent load?",
+   "options": [
+    {
+     "id": "a",
+     "text": "Option a"
+    },
+    {
+     "id": "b",
+     "text": "Option b"
+    },
+    {
+     "id": "c",
+     "text": "Option c"
+    }
+   ],
+   "correct": "b",
+   "explanation": "Because of the trade-off explained in the lesson."
+  }
+ ]
+}

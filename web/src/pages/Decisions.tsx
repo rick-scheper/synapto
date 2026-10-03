@@ -2,10 +2,9 @@
 // decision" button that copies a prompt for Claude Code (spec §5.3).
 
 import { RotateCcw } from "lucide-react";
-import { useState } from "react";
 import type { Decision, Decisions, Lesson, Loaded } from "../api";
 import { Markdown } from "../components/Markdown";
-import { Badge, Button, Callout, Status } from "../components/ui";
+import { Badge, Callout, CopyButton, Status } from "../components/ui";
 
 export function DecisionsTab({ lesson, decisions }: { lesson: Lesson; decisions: Loaded<Decisions | undefined> }) {
   if (!decisions.data) return <Status error={decisions.error} />;
@@ -83,34 +82,19 @@ function DecisionCard({ decision: d, lesson }: { decision: Decision; lesson: Les
         </div>
       )}
       <div className="sy-decision-foot">
-        <RevisitButton prompt={revisitPrompt(d, lesson)} />
+        <CopyButton text={revisitPrompt(d, lesson)} icon={<RotateCcw size={13} strokeWidth={1.5} />} copied="Prompt copied">
+          Revisit decision
+        </CopyButton>
       </div>
     </article>
   );
 }
 
-function RevisitButton({ prompt }: { prompt: string }) {
-  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(prompt);
-      setState("copied");
-    } catch {
-      setState("failed");
-    }
-    setTimeout(() => setState("idle"), 2500);
-  };
-  return (
-    <Button size="sm" icon={state === "copied" ? "✓" : <RotateCcw size={13} strokeWidth={1.5} />} onClick={copy}>
-      {state === "copied" ? "Prompt copied" : state === "failed" ? "Couldn't copy" : "Revisit decision"}
-    </Button>
-  );
-}
-
 function revisitPrompt(d: Decision, lesson: Lesson): string {
+  const { source } = lesson;
   const lines = [
-    `Reconsider the decision "${d.title}" in ${lesson.source.repo_path}.`,
-    `It was made while building "${lesson.title}"${lesson.source.branch ? ` on branch ${lesson.source.branch}` : ""}.`,
+    `Reconsider the decision "${d.title}"${source ? ` in ${source.repo_path}` : ""}.`,
+    `It was made while building "${lesson.title}"${source?.branch ? ` on branch ${source.branch}` : ""}.`,
     "",
   ];
   if (d.options.length > 0) {

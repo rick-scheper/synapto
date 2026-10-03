@@ -40,26 +40,36 @@ class ExerciseProgress(BaseModel):
     total: int
 
 
+class ReviewProgress(BaseModel):
+    reviewed: int
+    total: int
+    """1 for an open decision lesson, which completes once its choice is reviewed; else 0."""
+
+
 class Progress(BaseModel):
     value: float
-    """Answered questions plus passed exercises, as a fraction of all of them (0…1).
+    """Answered questions, passed exercises and a done review, as a fraction of all of them (0…1).
 
-    0 for a lesson without a quiz or rebuild part: it has nothing to complete.
+    0 for a lesson with none of them: it has nothing to complete.
     """
     quiz: QuizProgress
     exercises: ExerciseProgress
+    review: ReviewProgress
 
 
 class LessonSummary(BaseModel):
     """One lesson in the Library."""
 
     id: str
+    kind: Literal["debrief", "decision"]
+    mode: Literal["guided", "open"] | None
     title: str
     summary: str
     created_at: str
     difficulty: str
     concepts: list[str]
-    repo_path: str
+    repo_path: str | None
+    """None for a decision lesson made without a repo."""
     branch: str | None
     head_commit: str | None
     progress: Progress
@@ -68,7 +78,12 @@ class LessonSummary(BaseModel):
 
 
 def staleness(lesson: Lesson) -> Staleness:
-    """Compare the ``source.files`` hashes in ``lesson.json`` with the files in the repo now."""
+    """Compare the ``source.files`` hashes in ``lesson.json`` with the files in the repo now.
+
+    A lesson without source files (a decision lesson) has nothing to go stale.
+    """
+    if lesson.source is None or not lesson.source.files:
+        return Staleness(stale=False, repo_missing=False, changed=[])
     repo = Path(lesson.source.repo_path)
     if not repo.is_dir():
         return Staleness(stale=True, repo_missing=True, changed=[])
@@ -98,32 +113,36 @@ def load_exercise(store: LessonStore, lesson_id: str, exercise_id: str) -> Exerc
 
 
 def progress(store: LessonStore, lesson: Lesson) -> Progress:
-    """Answered questions and exercises with at least one passing run."""
+    """Answered questions, exercises with at least one passing run, and a done review."""
     questions = {q.id for q in load_quiz(store, lesson.id).questions} if "quiz" in lesson.parts else set()
     answers = {qid: a for qid, a in store.latest_answers(lesson.id).items() if qid in questions}
     exercises = exercise_ids(store, lesson.id) if "rebuild" in lesson.parts else []
     runs = store.exercise_runs(lesson.id)
     passed = sum(any(r.passed for r in runs.get(eid, ())) for eid in exercises)
-    total = len(questions) + len(exercises)
+    reviewable = lesson.mode == "open"
+    reviewed = int(reviewable and store.verdict(lesson.id) is not None)
+    total = len(questions) + len(exercises) + reviewable
     return Progress(
-        value=(len(answers) + passed) / total if total else 0.0,
+        value=(len(answers) + passed + reviewed) / total if total else 0.0,
         quiz=QuizProgress(answered=len(answers), correct=sum(a.correct for a in answers.values()),
                           total=len(questions)),
         exercises=ExerciseProgress(passed=passed, total=len(exercises)),
+        review=ReviewProgress(reviewed=reviewed, total=int(reviewable)),
     )
 
 
 def update_completion(store: LessonStore, lesson: Lesson) -> None:
-    """Record that the lesson is complete once every question is answered and every exercise passed."""
+    """Record that the lesson is complete once everything in it is answered, passed or reviewed."""
     if progress(store, lesson).value >= 1:
         store.mark_completed(lesson.id)
 
 
 def summarise(store: LessonStore, lesson: Lesson, opened_at: str | None) -> LessonSummary:
+    source = lesson.source
     return LessonSummary(
-        id=lesson.id, title=lesson.title, summary=lesson.summary,
+        id=lesson.id, kind=lesson.kind, mode=lesson.mode, title=lesson.title, summary=lesson.summary,
         created_at=lesson.created_at.isoformat(), difficulty=lesson.difficulty,
-        concepts=lesson.concepts, repo_path=lesson.source.repo_path,
-        branch=lesson.source.branch, head_commit=lesson.source.head_commit,
+        concepts=lesson.concepts, repo_path=source.repo_path if source else None,
+        branch=source.branch if source else None, head_commit=source.head_commit if source else None,
         progress=progress(store, lesson), staleness=staleness(lesson), opened_at=opened_at,
     )

@@ -211,3 +211,29 @@ a:hover { color: var(--glow); }
   .nb-outline { display: none; }
   .card-grid { grid-template-columns: 1fr; }
 }
+
+/* Decision lessons: Options tab (ADR-0008) */
+.decision-page { max-width: 960px; margin: 0 auto; width: 100%; }
+.decision-page .danger { color: var(--danger); }
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.matrix { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 22px; }
+.matrix th, .matrix td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.matrix tbody tr:last-child > * { border-bottom: 0; }
+.matrix thead th { background: var(--surface-raised); font-family: var(--font-display); font-weight: 600; white-space: nowrap; }
+.matrix tbody th { font-weight: 400; display: flex; flex-direction: column; min-width: 220px; }
+.matrix-criterion { font-weight: 600; }
+.matrix .is-marked { background: var(--accent-soft); }
+.score { display: inline-flex; gap: 3px; padding-top: 7px; }
+.score-pip { width: 10px; height: 10px; border-radius: var(--radius-full); border: 1px solid var(--line-strong); }
+.score-pip.is-on { background: var(--accent); border-color: var(--accent); }
+.option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4); }
+.option-card { display: flex; flex-direction: column; gap: var(--space-3); }
+.option-card.is-chosen { border-color: var(--accent); }
+.option-card p { margin: 0; }
+.option-lists { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.option-lists ul, .option-links { margin: var(--space-1) 0 0; padding-left: 18px; }
+.recommendation { max-width: none; border-color: var(--success); }
+.challenges { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: var(--space-3); }
+.choice-opt { background: transparent; cursor: pointer; font-family: var(--font-sans); text-align: left; }
+.choice-opt:hover { color: var(--ink); }
+.sy-input.textarea { height: auto; padding: var(--space-2) var(--space-3); line-height: 22px; resize: vertical; }

@@ -38,7 +38,7 @@ export function Library() {
   );
   const chips = t.concepts.slice(0, MAX_CHIPS).map((c) => c.name);
   if (concept && !chips.includes(concept)) chips.push(concept);
-  const repos = new Set(lessons.data.map((l) => l.repo_path)).size;
+  const repos = new Set(lessons.data.map((l) => l.repo_path).filter(Boolean)).size;
   const resume = continueWith(lessons.data);
 
   return (
@@ -49,7 +49,7 @@ export function Library() {
           <h1 className="h1">Lessons</h1>
           <p className="muted small">
             {[
-              `${plural(t.lessons, "lesson")} across ${plural(repos, "repo")}`,
+              repos ? `${plural(t.lessons, "lesson")} across ${plural(repos, "repo")}` : plural(t.lessons, "lesson"),
               t.in_progress && `${t.in_progress} in progress`,
               t.stale && `${t.stale} stale`,
             ]
@@ -75,10 +75,10 @@ export function Library() {
       {shown.length === 0 && <p className="muted">No lessons match. Clear the search or pick another concept.</p>}
 
       {groupByRepo(shown).map(([repoPath, group]) => (
-        <section key={repoPath} className="repo-group">
+        <section key={repoPath ?? ""} className="repo-group">
           <div className="repo-head">
-            <h2 className="overline ink">{repoName(repoPath)}</h2>
-            <span className="mono-sm muted">{repoPath}</span>
+            <h2 className="overline ink">{repoPath ? repoName(repoPath) : "Not yet built"}</h2>
+            {repoPath && <span className="mono-sm muted">{repoPath}</span>}
             <span className="grow" />
             <span className="caption muted">{plural(group.length, "lesson")}</span>
           </div>
@@ -123,6 +123,7 @@ function LessonCard({ lesson }: { lesson: LessonSummary }) {
           </Badge>
         ))}
         {extra > 0 && <Badge>+{extra}</Badge>}
+        {lesson.kind === "decision" && <Badge>{lesson.mode === "open" ? "Open decision" : "Decision"}</Badge>}
         {lesson.staleness.stale && <Badge tone="warning">Stale</Badge>}
       </div>
       {foot && <div className="sy-lesson-repo">{foot}</div>}
@@ -131,11 +132,12 @@ function LessonCard({ lesson }: { lesson: LessonSummary }) {
 }
 
 function ContinueBanner({ lesson }: { lesson: LessonSummary }) {
-  const { quiz, exercises } = lesson.progress;
+  const { quiz, exercises, review } = lesson.progress;
   const quizOpen = quiz.answered < quiz.total;
   const counts = [
     quiz.total > 0 && `${quiz.answered} of ${quiz.total} answered`,
     exercises.total > 0 && `Rebuild ${exercises.passed} of ${exercises.total} passed`,
+    review.total > 0 && (review.reviewed ? "Reviewed" : "Review pending"),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -165,8 +167,9 @@ function EmptyLibrary() {
       </span>
       <h1 className="h2">No lessons yet</h1>
       <p className="muted">
-        After the agent builds something, run <code className="md-code">/debrief</code> in Claude Code. The lesson
-        shows up here once it's published.
+        After the agent builds something, run <code className="md-code">/debrief</code> in Claude Code. Facing a
+        choice before building, such as which database to use? Run <code className="md-code">/decide</code>. The
+        lesson shows up here once it's published.
       </p>
     </main>
   );
@@ -179,8 +182,9 @@ function continueWith(lessons: LessonSummary[]): LessonSummary | undefined {
     .sort((a, b) => b.opened_at!.localeCompare(a.opened_at!))[0];
 }
 
-function groupByRepo(lessons: LessonSummary[]): [string, LessonSummary[]][] {
-  const groups = new Map<string, LessonSummary[]>();
+/** Lessons by repo; those without one ("Not yet built", key null) come last. */
+function groupByRepo(lessons: LessonSummary[]): [string | null, LessonSummary[]][] {
+  const groups = new Map<string | null, LessonSummary[]>();
   for (const lesson of lessons) groups.set(lesson.repo_path, [...(groups.get(lesson.repo_path) ?? []), lesson]);
-  return [...groups];
+  return [...groups].sort(([a], [b]) => Number(a === null) - Number(b === null));
 }

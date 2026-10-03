@@ -311,7 +311,8 @@ function NotebookView({ lesson, initial }: { lesson: Lesson; initial: NotebookSt
 }
 
 function KernelStatus({ lesson, kernel, busy }: { lesson: Lesson; kernel: KernelState; busy: boolean }) {
-  const { python, python_version, cwd } = lesson.environment;
+  // A lesson with a notebook part always has an environment.
+  const { python, python_version, cwd } = lesson.environment!;
   const shown = python.startsWith(cwd.replace(/\/?$/, "/")) ? python.slice(cwd.replace(/\/?$/, "/").length) : python;
   const label = kernel.phase === "starting" ? "Starting…" : kernel.phase === "failed" ? "No kernel" : busy ? "Busy" : "Idle";
   return (

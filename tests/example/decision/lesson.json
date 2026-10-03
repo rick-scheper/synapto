@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "kind": "decision",
+  "id": "2026-10-03-gridsnap-storage",
+  "title": "Where should gridsnap keep its point clouds?",
+  "summary": "gridsnap needs to store downsampled point clouds and query them by bounding box. This lesson compares the candidates for that.",
+  "created_at": "2026-10-03T14:00:00+02:00",
+  "difficulty": "intermediate",
+  "concepts": ["embedded vs client-server databases", "spatial indexing", "columnar storage"],
+  "prerequisites": ["basic SQL"],
+  "question": "Which database should gridsnap use to store point clouds and query them by bounding box?",
+  "mode": "open",
+  "parts": ["explain", "options", "quiz"]
+}

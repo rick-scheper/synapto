@@ -1,0 +1,43 @@
+{
+  "criteria": [
+    { "id": "ops", "name": "Operational simplicity", "description": "Nothing to run, back up or upgrade besides a file.", "weight": 3 },
+    { "id": "spatial", "name": "Spatial queries", "description": "Bounding-box queries over millions of points without a full scan.", "weight": 2 },
+    { "id": "concurrency", "name": "Concurrent writers", "description": "Several processes writing at the same time.", "weight": 1 }
+  ],
+  "options": [
+    {
+      "id": "sqlite",
+      "name": "SQLite + R*Tree",
+      "summary": "An embedded, single-file SQL database with an R*Tree module for spatial indexes.",
+      "strengths": ["Zero setup: one file next to the data", "R*Tree index answers bounding-box queries quickly"],
+      "weaknesses": ["One writer at a time"],
+      "fits_when": "One process writes and the data fits on one machine.",
+      "scores": { "ops": 5, "spatial": 4, "concurrency": 2 },
+      "links": [{ "title": "The SQLite R*Tree module", "url": "https://www.sqlite.org/rtree.html" }]
+    },
+    {
+      "id": "postgis",
+      "name": "PostgreSQL + PostGIS",
+      "summary": "A client-server database with a mature spatial extension.",
+      "strengths": ["Full spatial SQL", "Many concurrent writers"],
+      "weaknesses": ["A server to run, secure and back up"],
+      "fits_when": "Several services share the data, or it outgrows one machine.",
+      "scores": { "ops": 2, "spatial": 5, "concurrency": 5 }
+    },
+    {
+      "id": "duckdb",
+      "name": "DuckDB",
+      "summary": "An embedded, columnar analytics database.",
+      "strengths": ["Fast scans and aggregations over columns", "Reads Parquet directly"],
+      "weaknesses": ["Spatial indexing is an extension and less mature", "One writing process"],
+      "fits_when": "The workload is mostly analytical scans rather than point lookups.",
+      "scores": { "ops": 5, "spatial": 3, "concurrency": 2 }
+    }
+  ],
+  "recommendation": {
+    "option": "sqlite",
+    "why": "gridsnap is a single-user command-line tool. SQLite's R*Tree gives fast bounding-box queries without a server.",
+    "trade_offs": "Only one process can write at a time.",
+    "would_change_if": "Several services need to write at once, or the data no longer fits on one machine: then PostGIS."
+  }
+}

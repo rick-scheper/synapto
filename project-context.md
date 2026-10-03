@@ -39,6 +39,7 @@ Current decisions:
 | 0005 | The web UI is a **React + Vite + TypeScript** single-page app, built into `src/synapto/web/` |
 | 0006 | The project is **Synapto**: CLI, import package and plugin `synapto`; PyPI distribution **`synapto-hub`** |
 | 0007 | The developer picks a lesson's **parts** at `/debrief` time; `lesson.json` `parts` lists them and only their files are in the bundle |
+| 0008 | **Decision lessons** (`kind: "decision"`, made by `/decide`) teach a choice before code exists; open-mode choices are reviewed through `/decide review` and the CLI, never by an LLM in the hub |
  
 Still open (they need an ADR before the milestone that depends on them): how lesson updates are versioned, and cross-lesson concept tracking.
  
@@ -50,7 +51,7 @@ The **lesson bundle** (a folder with `lesson.json`, plus `explanation.md`, `deci
  
 ```
 .claude-plugin/             marketplace manifest (`/plugin marketplace add rick-scheper/synapto`)
-plugin/                     Claude Code plugin `synapto`; skills/debrief/SKILL.md
+plugin/                     Claude Code plugin `synapto`; skills/debrief/ and skills/decide/
 src/synapto/cli.py          validate · publish · serve · list · open · doctor · remove
 src/synapto/bundle/         pydantic models, loader, validator
 src/synapto/server/         FastAPI app, kernel manager, test runner

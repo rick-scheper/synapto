@@ -50,15 +50,22 @@ def _source_ref(value: str) -> str:
     return value
 
 
-PARTS = ("explain", "decisions", "notebook", "quiz", "rebuild")
+PARTS = ("explain", "decisions", "options", "notebook", "quiz", "rebuild")
 """The parts a lesson can have, in the order the hub shows them."""
-Part = Literal["explain", "decisions", "notebook", "quiz", "rebuild"]
+Part = Literal["explain", "decisions", "options", "notebook", "quiz", "rebuild"]
+DEBRIEF_PARTS: tuple[Part, ...] = ("explain", "decisions", "notebook", "quiz", "rebuild")
+"""The parts a debrief lesson can have, and its default."""
+DECISION_PARTS: tuple[Part, ...] = ("explain", "options", "quiz")
+"""The parts a decision lesson can have (ADR-0008), and its default."""
+RUNNABLE_PARTS: tuple[Part, ...] = ("notebook", "rebuild")
+"""The parts whose code runs in the project interpreter."""
 
 NonEmptyStr = Annotated[str, AfterValidator(_non_empty)]
 RelativePath = Annotated[str, AfterValidator(_relative_path)]
 AbsolutePath = Annotated[str, AfterValidator(_absolute_path)]
 SourceRef = Annotated[str, AfterValidator(_source_ref)]
 Identifier = Annotated[str, Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")]
+Slug = Annotated[str, Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
 
 
 def source_ref_path(ref: str) -> str:
@@ -89,7 +96,8 @@ class Source(_Model):
     base_commit: str | None = None
     head_commit: str | None = None
     includes_uncommitted: bool = False
-    files: Annotated[list[SourceFile], Field(min_length=1)]
+    files: list[SourceFile]
+    """Every file a ``source_ref`` points into; at least one in a debrief lesson."""
 
     @model_validator(mode="after")
     def _unique_paths(self) -> Source:
@@ -135,6 +143,8 @@ class DataSlot(_Model):
 
 class Lesson(_Model):
     schema_version: Literal[1]
+    kind: Literal["debrief", "decision"] = "debrief"
+    """``debrief`` looks back on built code; ``decision`` teaches a choice before it's built (ADR-0008)."""
     id: Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$")]
     title: NonEmptyStr
     summary: NonEmptyStr
@@ -142,19 +152,129 @@ class Lesson(_Model):
     difficulty: Literal["beginner", "intermediate", "advanced"]
     concepts: Annotated[list[NonEmptyStr], Field(min_length=1)]
     prerequisites: list[NonEmptyStr] = []
-    source: Source
-    environment: Environment
+    question: NonEmptyStr | None = None
+    """A decision lesson's question, in the developer's words."""
+    mode: Literal["guided", "open"] | None = None
+    """A decision lesson's mode: lead to the recommendation, or let the developer decide."""
+    source: Source | None = None
+    """Required in a debrief lesson; a decision lesson may have no repo yet."""
+    environment: Environment | None = None
+    """Required when the lesson has a runnable part."""
     data_slots: list[DataSlot] = []
-    parts: Annotated[list[Part], Field(min_length=1)] = list(PARTS)
-    """The parts the developer chose at ``/debrief`` time; each has its own file(s) in the bundle."""
+    parts: Annotated[list[Part], Field(min_length=1)]
+    """The parts the developer chose; each has its own file(s) in the bundle.
+
+    Defaults to every part of the lesson's kind.
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_parts(cls, data: object) -> object:
+        if isinstance(data, dict) and "parts" not in data:
+            parts = DECISION_PARTS if data.get("kind") == "decision" else DEBRIEF_PARTS
+            data = {**data, "parts": list(parts)}
+        return data
 
     @model_validator(mode="after")
-    def _unique_names(self) -> Lesson:
+    def _consistent(self) -> Lesson:
         if dupes := _duplicates([s.name for s in self.data_slots]):
             raise ValueError(f"data_slots has duplicate names: {', '.join(dupes)}")
         if dupes := _duplicates(list(self.parts)):
             raise ValueError(f"parts lists these more than once: {', '.join(dupes)}")
+        allowed = DECISION_PARTS if self.kind == "decision" else DEBRIEF_PARTS
+        if wrong := [p for p in self.parts if p not in allowed]:
+            raise ValueError(f"a {self.kind} lesson can't have the part(s) {', '.join(wrong)}; "
+                             f"its parts are {', '.join(allowed)}")
+        if self.kind == "decision":
+            missing = [f for f in ("question", "mode") if getattr(self, f) is None]
+            if missing:
+                raise ValueError(f"a decision lesson needs {' and '.join(missing)}")
+            if "options" not in self.parts:
+                raise ValueError("a decision lesson needs the 'options' part")
+        else:
+            if self.question is not None or self.mode is not None:
+                raise ValueError("question and mode belong to decision lessons; remove them, "
+                                 "or set kind to 'decision'")
+            if self.source is None:
+                raise ValueError("a debrief lesson needs source")
+            if not self.source.files:
+                raise ValueError("source.files must list at least one file in a debrief lesson")
+        if self.environment is None and any(p in self.parts for p in RUNNABLE_PARTS):
+            raise ValueError("environment is required when parts has notebook or rebuild")
         return self
+
+
+# --- options.json (decision lessons) ------------------------------------------
+
+
+class Criterion(_Model):
+    id: Slug
+    name: NonEmptyStr
+    description: NonEmptyStr
+    weight: Annotated[int, Field(ge=1, le=3)]
+
+
+class Link(_Model):
+    title: NonEmptyStr
+    url: Annotated[str, Field(pattern=r"^https?://\S+$")]
+
+
+class Candidate(_Model):
+    id: Slug
+    name: NonEmptyStr
+    summary: NonEmptyStr
+    strengths: Annotated[list[NonEmptyStr], Field(min_length=1)]
+    weaknesses: Annotated[list[NonEmptyStr], Field(min_length=1)]
+    fits_when: NonEmptyStr
+    scores: dict[str, Annotated[int, Field(ge=1, le=5)]]
+    """Criterion id -> 1 (poor) to 5 (excellent)."""
+    links: list[Link] = []
+
+
+class Recommendation(_Model):
+    option: NonEmptyStr
+    why: NonEmptyStr
+    trade_offs: NonEmptyStr
+    would_change_if: NonEmptyStr
+
+
+class Options(_Model):
+    criteria: Annotated[list[Criterion], Field(min_length=2, max_length=8)]
+    options: Annotated[list[Candidate], Field(min_length=2, max_length=5)]
+    recommendation: Recommendation
+
+    @model_validator(mode="after")
+    def _references(self) -> Options:
+        criteria = [c.id for c in self.criteria]
+        if dupes := _duplicates(criteria):
+            raise ValueError(f"duplicate criterion ids: {', '.join(dupes)}")
+        ids = [o.id for o in self.options]
+        if dupes := _duplicates(ids):
+            raise ValueError(f"duplicate option ids: {', '.join(dupes)}")
+        for option in self.options:
+            if missing := [c for c in criteria if c not in option.scores]:
+                raise ValueError(f"option {option.id!r} has no score for: {', '.join(missing)}")
+            if unknown := sorted(set(option.scores) - set(criteria)):
+                raise ValueError(f"option {option.id!r} scores unknown criteria: {', '.join(unknown)}")
+        if self.recommendation.option not in ids:
+            raise ValueError(f"recommendation.option {self.recommendation.option!r} is not one of "
+                             f"the option ids ({', '.join(ids)})")
+        return self
+
+
+# --- a review verdict (``synapto decision verdict``) ---------------------------
+
+
+class Challenge(_Model):
+    question: NonEmptyStr
+    response: NonEmptyStr
+
+
+class Verdict(_Model):
+    final_option: NonEmptyStr
+    """The option the developer settled on in the review; may differ from their recorded choice."""
+    challenges: Annotated[list[Challenge], Field(min_length=1)]
+    opinion: NonEmptyStr
 
 
 # --- quiz.json -----------------------------------------------------------------

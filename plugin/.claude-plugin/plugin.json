@@ -1,7 +1,7 @@
 {
   "name": "synapto",
   "version": "0.1.0",
-  "description": "Turn what your coding agent just built into an interactive lesson.",
+  "description": "Turn what your coding agent just built, or a choice you face before building, into an interactive lesson.",
   "author": {
     "name": "rick-scheper"
   },

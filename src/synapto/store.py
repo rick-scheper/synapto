@@ -69,11 +69,23 @@ CREATE TABLE IF NOT EXISTS lesson_status (
     opened_at    TEXT,
     completed_at TEXT
 );
+CREATE TABLE IF NOT EXISTS decision_choices (
+    lesson_id  TEXT PRIMARY KEY,
+    option_id  TEXT NOT NULL,
+    reasoning  TEXT NOT NULL,
+    decided_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS decision_verdicts (
+    lesson_id    TEXT PRIMARY KEY,
+    verdict_json TEXT NOT NULL,
+    adr_path     TEXT,
+    reviewed_at  TEXT NOT NULL
+);
 """
 
 # Every table keyed by ``lesson_id``: what the learner did in a lesson.
 _LEARNER_TABLES = ("quiz_answers", "exercise_runs", "exercise_drafts", "notebook_copies",
-                   "data_slot_values", "lesson_status")
+                   "data_slot_values", "lesson_status", "decision_choices", "decision_verdicts")
 
 
 def synapto_home() -> Path:
@@ -103,6 +115,20 @@ class ExerciseRun:
     n_passed: int
     n_total: int
     ran_at: str
+
+
+@dataclass(frozen=True)
+class DecisionChoice:
+    option_id: str
+    reasoning: str
+    decided_at: str
+
+
+@dataclass(frozen=True)
+class DecisionVerdict:
+    verdict_json: str
+    adr_path: str | None
+    reviewed_at: str
 
 
 @dataclass(frozen=True)
@@ -165,7 +191,9 @@ class LessonStore:
         with closing(self.connect()) as db, db:
             db.execute(
                 "INSERT OR REPLACE INTO lessons VALUES (?, ?, ?, ?, ?, ?)",
-                (lesson.id, lesson.title, lesson.source.repo_path, lesson.created_at.isoformat(),
+                # A decision lesson may have no repo yet; it's indexed under "".
+                (lesson.id, lesson.title, lesson.source.repo_path if lesson.source else "",
+                 lesson.created_at.isoformat(),
                  json.dumps(lesson.concepts), lesson.difficulty),
             )
             if target.exists():
@@ -306,6 +334,36 @@ class LessonStore:
             db.execute("DELETE FROM data_slot_values WHERE lesson_id = ?", (lesson_id,))
             db.executemany("INSERT INTO data_slot_values VALUES (?, ?, ?)",
                            [(lesson_id, slot, json.dumps(v)) for slot, v in values.items()])
+
+    def choice(self, lesson_id: str) -> DecisionChoice | None:
+        """The developer's choice in an open decision lesson, if they made one."""
+        with closing(self.connect()) as db:
+            row = db.execute("SELECT option_id, reasoning, decided_at FROM decision_choices "
+                             "WHERE lesson_id = ?", (lesson_id,)).fetchone()
+        return DecisionChoice(*row) if row else None
+
+    def save_choice(self, lesson_id: str, option_id: str, reasoning: str) -> DecisionChoice:
+        """Store the choice, replacing any earlier one."""
+        choice = DecisionChoice(option_id, reasoning, _now())
+        with closing(self.connect()) as db, db:
+            db.execute("INSERT OR REPLACE INTO decision_choices VALUES (?, ?, ?, ?)",
+                       (lesson_id, choice.option_id, choice.reasoning, choice.decided_at))
+        return choice
+
+    def verdict(self, lesson_id: str) -> DecisionVerdict | None:
+        """The verdict of the review of an open decision lesson, if it was reviewed."""
+        with closing(self.connect()) as db:
+            row = db.execute("SELECT verdict_json, adr_path, reviewed_at FROM decision_verdicts "
+                             "WHERE lesson_id = ?", (lesson_id,)).fetchone()
+        return DecisionVerdict(*row) if row else None
+
+    def save_verdict(self, lesson_id: str, verdict_json: str, adr_path: str | None) -> DecisionVerdict:
+        """Store the verdict, replacing an earlier review's."""
+        verdict = DecisionVerdict(verdict_json, adr_path, _now())
+        with closing(self.connect()) as db, db:
+            db.execute("INSERT OR REPLACE INTO decision_verdicts VALUES (?, ?, ?, ?)",
+                       (lesson_id, verdict.verdict_json, verdict.adr_path, verdict.reviewed_at))
+        return verdict
 
 
 def _now() -> str:

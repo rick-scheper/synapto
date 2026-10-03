@@ -10,6 +10,7 @@ import { difficultyLabel, formatDate, plural, repoName, shortCommit } from "../f
 import { DecisionsTab } from "./Decisions";
 import { ExplainTab } from "./Explain";
 import { NotebookTab } from "./Notebook";
+import { OptionsTab } from "./Options";
 import { QuizTab } from "./Quiz";
 import { RebuildTab } from "./Rebuild";
 
@@ -42,6 +43,7 @@ export function LessonPage() {
   const all: Record<Part, TabItem> = {
     explain: { id: "explain", label: "Explain" },
     decisions: { id: "decisions", label: "Decisions", count: decisions.data?.decisions.length || undefined },
+    options: { id: "options", label: "Options" },
     notebook: { id: "notebook", label: "Notebook" },
     quiz: { id: "quiz", label: "Quiz", count: progress.quiz.total - progress.quiz.answered || undefined },
     rebuild: { id: "rebuild", label: "Rebuild", count: progress.exercises.total - progress.exercises.passed || undefined },
@@ -58,6 +60,7 @@ export function LessonPage() {
         <div className="tab-body">
           {tab === "explain" && <ExplainTab lessonId={id} />}
           {tab === "decisions" && <DecisionsTab lesson={lesson} decisions={decisions} />}
+          {tab === "options" && <OptionsTab lesson={lesson} onProgress={detail.reload} />}
           {tab === "notebook" && <NotebookTab lesson={lesson} />}
           {tab === "quiz" && <QuizTab lessonId={id} answers={detail.data.answers} onAnswered={detail.reload} />}
           {tab === "rebuild" && <RebuildTab lessonId={id} onProgress={detail.reload} />}
@@ -78,20 +81,26 @@ function BackLink() {
 
 function LessonHeader({ detail: { lesson, progress } }: { detail: LessonDetail }) {
   const { source } = lesson;
-  const commits = [shortCommit(source.base_commit), shortCommit(source.head_commit)].filter(Boolean).join(" → ");
-  const sourceLine = [
-    repoName(source.repo_path),
-    source.branch,
-    commits,
-    source.includes_uncommitted && "uncommitted changes",
-    plural(source.files.length, "file"),
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const commits = source
+    ? [shortCommit(source.base_commit), shortCommit(source.head_commit)].filter(Boolean).join(" → ")
+    : "";
+  const sourceLine = source
+    ? [
+        repoName(source.repo_path),
+        source.branch,
+        commits,
+        source.includes_uncommitted && "uncommitted changes",
+        source.files.length > 0 && plural(source.files.length, "file"),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "Not yet built";
+  const kind = lesson.kind === "decision" ? `${lesson.mode === "open" ? "Open" : "Guided"} decision` : "Lesson";
   const pct = Math.round(progress.value * 100);
   const counts = [
     lesson.parts.includes("quiz") && `Quiz ${progress.quiz.answered}/${progress.quiz.total}`,
     lesson.parts.includes("rebuild") && `Rebuild ${progress.exercises.passed}/${progress.exercises.total}`,
+    progress.review.total > 0 && (progress.review.reviewed ? "Reviewed" : "Not reviewed yet"),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -99,11 +108,11 @@ function LessonHeader({ detail: { lesson, progress } }: { detail: LessonDetail }
     <section className="lesson-head">
       <div className="lesson-head-main">
         <div className="overline">
-          Lesson · {difficultyLabel(lesson.difficulty)} · {formatDate(lesson.created_at)}
+          {kind} · {difficultyLabel(lesson.difficulty)} · {formatDate(lesson.created_at)}
         </div>
         <h1 className="h1">{lesson.title}</h1>
         <p className="lead">{lesson.summary}</p>
-        <div className="mono-sm muted" title={source.repo_path}>
+        <div className="mono-sm muted" title={source?.repo_path}>
           {sourceLine}
         </div>
       </div>
@@ -155,7 +164,7 @@ function StaleBanner({ detail: { lesson, staleness } }: { detail: LessonDetail }
   if (staleness.repo_missing) {
     return (
       <Callout tone="warning" title="The project folder for this lesson is gone.">
-        <span className="mono-sm">{lesson.source.repo_path}</span> no longer exists, so the lesson can't be compared
+        <span className="mono-sm">{lesson.source?.repo_path}</span> no longer exists, so the lesson can't be compared
         with the current code.
       </Callout>
     );

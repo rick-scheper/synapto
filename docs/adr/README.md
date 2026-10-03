@@ -9,3 +9,4 @@
 | [0005](0005-frontend-react-vite.md) | Build the web UI as a React + Vite + TypeScript single-page app | Accepted |
 | [0006](0006-name-synapto.md) | Name the project Synapto; publish on PyPI as `synapto-hub` | Accepted |
 | [0007](0007-choose-lesson-parts-at-debrief.md) | Let the developer choose a lesson's parts at `/debrief` time | Accepted |
+| [0008](0008-decision-lessons.md) | Decision lessons for code that isn't built yet, reviewed through `/decide` | Accepted |

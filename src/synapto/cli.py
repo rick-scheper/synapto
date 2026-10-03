@@ -204,3 +204,67 @@ def doctor(
         typer.echo(f"\nFix: {report.fix_command()}")
         raise typer.Exit(1)
     typer.echo("\nReady: lessons can run in this interpreter.")
+
+
+decision_app = typer.Typer(no_args_is_help=True, help="Review a decision lesson's choice (used by /decide review).")
+app.add_typer(decision_app, name="decision")
+
+
+def _decision_lesson(store: LessonStore, lesson_id: str) -> Lesson:
+    if not store.exists(lesson_id):
+        typer.echo(f"error: no lesson {lesson_id!r} in {store.lessons_dir}", err=True)
+        raise typer.Exit(1)
+    lesson = store.load(lesson_id)
+    if lesson.kind != "decision":
+        typer.echo(f"error: lesson {lesson_id!r} is not a decision lesson", err=True)
+        raise typer.Exit(1)
+    return lesson
+
+
+@decision_app.command("show")
+def decision_show(
+    lesson_id: Annotated[str, typer.Argument(metavar="ID", help="The decision lesson's id.")],
+) -> None:
+    """Print the question, options, recommendation, the developer's choice and any verdict as JSON."""
+    from synapto.server.decide import decision_state
+
+    store = LessonStore.default()
+    state = decision_state(store, _decision_lesson(store, lesson_id), reveal=True)
+    typer.echo(state.model_dump_json(indent=2))
+
+
+@decision_app.command("verdict")
+def decision_verdict(
+    lesson_id: Annotated[str, typer.Argument(metavar="ID", help="The decision lesson's id.")],
+    file: Annotated[Path, typer.Argument(help="The verdict JSON: final_option, challenges, opinion.")],
+    adr: Annotated[
+        str | None, typer.Option(help="Path, in the project, of the ADR that records the decision.")
+    ] = None,
+) -> None:
+    """Store the verdict of a review, replacing an earlier one. The hub then shows it."""
+    from pydantic import ValidationError
+
+    from synapto.bundle.models import Verdict
+    from synapto.bundle.validator import json_path, pydantic_message
+    from synapto.server.decide import DecisionError, record_verdict
+
+    store = LessonStore.default()
+    lesson = _decision_lesson(store, lesson_id)
+    try:
+        verdict = Verdict.model_validate_json(file.read_bytes())
+    except OSError as exc:
+        typer.echo(f"error: can't read {file}: {exc}", err=True)
+        raise typer.Exit(1) from None
+    except ValidationError as exc:
+        for err in exc.errors():
+            where = json_path(err["loc"])
+            typer.echo(f"{file}:{where}: {pydantic_message(err)}" if where else f"{file}: {pydantic_message(err)}")
+        raise typer.Exit(1) from None
+    try:
+        done = record_verdict(store, lesson, verdict, adr)
+    except DecisionError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(1) from None
+    agreement = "matches" if done.agrees else "differs from"
+    typer.echo(f"Stored the verdict for {lesson_id}: {verdict.final_option} {agreement} the recommendation.")
+    typer.echo(f"Lesson URL: {lesson_url(lesson_id)}/options")

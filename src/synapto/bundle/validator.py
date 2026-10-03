@@ -8,7 +8,9 @@ test name.
 
 A bundle holds only the parts listed in ``lesson.json`` ``parts`` (ADR-0007):
 each listed part's file must exist, and a file of an unlisted part is an error,
-so a forgotten file or a forgotten ``parts`` entry is caught either way.
+so a forgotten file or a forgotten ``parts`` entry is caught either way. A
+decision lesson (ADR-0008) has the ``options`` part instead of looking back on
+built code, so it has nothing to run.
 
 Static checks always run. With ``execute=True`` (the default, and what the CLI
 does) the validator also checks the project interpreter, runs the notebook top
@@ -36,7 +38,17 @@ from typing import Any, Literal, TypeVar
 import nbformat
 from pydantic import BaseModel, ValidationError
 
-from synapto.bundle.models import PARTS, CellMeta, Exercise, Lesson, Part, Quiz, source_ref_path
+from synapto.bundle.models import (
+    PARTS,
+    RUNNABLE_PARTS,
+    CellMeta,
+    Exercise,
+    Lesson,
+    Options,
+    Part,
+    Quiz,
+    source_ref_path,
+)
 from synapto.environment import check_interpreter
 from synapto.server.kernels import KernelConfig, KernelError, LessonKernel
 from synapto.server.testrunner import run_tests
@@ -44,11 +56,11 @@ from synapto.server.testrunner import run_tests
 PART_FILES: dict[Part, str] = {
     "explain": "explanation.md",
     "decisions": "decisions.md",
+    "options": "options.json",
     "notebook": "notebook.ipynb",
     "quiz": "quiz.json",
     "rebuild": "exercises",
 }
-RUNNABLE_PARTS = ("notebook", "rebuild")
 MAX_FIXTURES_BYTES = 5 * 1024 * 1024
 MIN_EXERCISES, MAX_EXERCISES = 1, 3
 SLOW_CELL_SECONDS = 30.0
@@ -99,14 +111,14 @@ def validate_bundle(bundle: Path, execute: bool = True) -> ValidationReport:
     return _Validator(Path(bundle).resolve(), execute).run()
 
 
-def _json_path(loc: Sequence[int | str]) -> str:
+def json_path(loc: Sequence[int | str]) -> str:
     out = ""
     for part in loc:
         out += f"[{part}]" if isinstance(part, int) else (f".{part}" if out else str(part))
     return out
 
 
-def _pydantic_message(err: Any) -> str:
+def pydantic_message(err: Any) -> str:
     kind, msg = err["type"], err["msg"]
     if kind == "missing":
         return "required field is missing"
@@ -170,6 +182,8 @@ class _Validator:
         parts = self.check_parts(lesson)
 
         quiz = self.load_json("quiz.json", Quiz) if "quiz" in parts else None
+        if "options" in parts:
+            self.load_json("options.json", Options)
         for part in ("explain", "decisions"):
             if part in parts:
                 self.check_markdown(PART_FILES[part])
@@ -217,7 +231,7 @@ class _Validator:
             return model.model_validate_json(path.read_bytes())
         except ValidationError as exc:
             for err in exc.errors():
-                self.error(name, _json_path(err["loc"]) or None, _pydantic_message(err))
+                self.error(name, json_path(err["loc"]) or None, pydantic_message(err))
             return None
 
     def load_notebook(self) -> list[tuple[int, Any, CellMeta]] | None:
@@ -237,7 +251,7 @@ class _Validator:
         try:
             nbformat.validate(nb)
         except nbformat.ValidationError as exc:
-            where = _json_path(list(exc.absolute_path)) or None
+            where = json_path(list(exc.absolute_path)) or None
             self.error(name, where, f"does not match the nbformat 4 schema: {exc.message}")
             return None
 
@@ -254,8 +268,8 @@ class _Validator:
                 meta = CellMeta.model_validate(raw)
             except ValidationError as exc:
                 for err in exc.errors():
-                    where = _json_path([f"cells[{i}]", "metadata", "synapto", *err["loc"]])
-                    self.error(name, where, _pydantic_message(err))
+                    where = json_path([f"cells[{i}]", "metadata", "synapto", *err["loc"]])
+                    self.error(name, where, pydantic_message(err))
                 ok = False
                 continue
             want = "markdown" if meta.role == "explain" else "code"
@@ -428,7 +442,7 @@ class _Validator:
         cells: list[tuple[int, Any, CellMeta]] | None,
         exercises: list[tuple[str, Exercise | None]],
     ) -> None:
-        listed = {f.path for f in lesson.source.files}
+        listed = {f.path for f in lesson.source.files} if lesson.source else set()
         refs: list[tuple[str, str, str]] = []
         if quiz is not None:
             refs += [("quiz.json", f"questions[{i}].source_ref", q.source_ref)
@@ -448,6 +462,7 @@ class _Validator:
 
     def check_environment(self, lesson: Lesson) -> bool:
         env = lesson.environment
+        assert env is not None  # Lesson requires it with a runnable part
         report = check_interpreter(env.python)
         ok = True
         if report.error:
@@ -506,6 +521,7 @@ class _Validator:
 
     def run_exercise(self, lesson: Lesson, folder: str, exercise: Exercise) -> None:
         env = lesson.environment
+        assert env is not None
         root = self.bundle / "exercises" / folder
         tests = root / "test_exercise.py"
         rel = f"exercises/{folder}"

@@ -87,6 +87,7 @@ class KernelConfig:
     ) -> KernelConfig:
         """The config for a lesson's kernel, with ``values`` chosen by the learner (see ``resolve_data``)."""
         env = lesson.environment
+        assert env is not None, "only lessons with a notebook part have a kernel"
         return cls(
             python=Path(env.python),
             cwd=Path(env.cwd),

@@ -53,6 +53,7 @@ def test_list_lessons(client: TestClient, store: LessonStore) -> None:
         "value": 0.0,
         "quiz": {"answered": 0, "correct": 0, "total": n_questions},
         "exercises": {"passed": 0, "total": 2},
+        "review": {"reviewed": 0, "total": 0},
     }
     assert lesson["opened_at"] is None
 

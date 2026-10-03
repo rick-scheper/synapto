@@ -6,17 +6,26 @@ import { useCallback, useEffect, useState } from "react";
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 
 /** The parts a lesson can have, in the order the hub shows them. */
-export const PARTS = ["explain", "decisions", "notebook", "quiz", "rebuild"] as const;
+export const PARTS = ["explain", "decisions", "options", "notebook", "quiz", "rebuild"] as const;
 export type Part = (typeof PARTS)[number];
+
+export type LessonKind = "debrief" | "decision";
+export type DecisionMode = "guided" | "open";
 
 export interface Lesson {
   id: string;
+  /** `decision`: a choice taught before the code exists (ADR-0008). */
+  kind: LessonKind;
   title: string;
   summary: string;
   created_at: string;
   difficulty: Difficulty;
   concepts: string[];
   prerequisites: string[];
+  /** A decision lesson's question and mode; null in a debrief lesson. */
+  question: string | null;
+  mode: DecisionMode | null;
+  /** Null for a decision lesson made without a repo. */
   source: {
     repo_path: string;
     remote: string | null;
@@ -25,15 +34,16 @@ export interface Lesson {
     head_commit: string | null;
     includes_uncommitted: boolean;
     files: { path: string; sha256: string }[];
-  };
+  } | null;
+  /** Null unless the lesson has a notebook or rebuild part. */
   environment: {
     python: string;
     python_version: string | null;
     cwd: string;
     extra_sys_path: string[];
-  };
+  } | null;
   data_slots: DataSlot[];
-  /** The parts chosen at /debrief time; the hub shows a tab for each. */
+  /** The parts chosen when the lesson was made; the hub shows a tab for each. */
   parts: Part[];
 }
 
@@ -55,14 +65,16 @@ export interface SlotState extends DataSlot {
 }
 
 export interface Progress {
-  /** 0…1; 0 for a lesson without a quiz or rebuild part. */
+  /** 0…1; 0 for a lesson with nothing to complete. */
   value: number;
   quiz: { answered: number; correct: number; total: number };
   exercises: { passed: number; total: number };
+  /** total is 1 for an open decision lesson, which completes once its choice is reviewed. */
+  review: { reviewed: number; total: number };
 }
 
-/** Whether the lesson has anything to complete: quiz questions or exercises. */
-export const completable = (p: Progress) => p.quiz.total + p.exercises.total > 0;
+/** Whether the lesson has anything to complete: quiz questions, exercises or a review. */
+export const completable = (p: Progress) => p.quiz.total + p.exercises.total + p.review.total > 0;
 
 export interface Staleness {
   stale: boolean;
@@ -72,12 +84,15 @@ export interface Staleness {
 
 export interface LessonSummary {
   id: string;
+  kind: LessonKind;
+  mode: DecisionMode | null;
   title: string;
   summary: string;
   created_at: string;
   difficulty: Difficulty;
   concepts: string[];
-  repo_path: string;
+  /** Null for a decision lesson made without a repo. */
+  repo_path: string | null;
   branch: string | null;
   head_commit: string | null;
   progress: Progress;
@@ -111,6 +126,62 @@ export interface Decision {
 export interface Decisions {
   decisions: Decision[];
   note: string | null;
+}
+
+export interface Criterion {
+  id: string;
+  name: string;
+  description: string;
+  /** 1 (nice to have) to 3 (decisive). */
+  weight: number;
+}
+
+export interface Candidate {
+  id: string;
+  name: string;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  fits_when: string;
+  /** Criterion id -> 1 (poor) to 5 (excellent). */
+  scores: Record<string, number>;
+  links: { title: string; url: string }[];
+}
+
+export interface Recommendation {
+  option: string;
+  why: string;
+  trade_offs: string;
+  would_change_if: string;
+}
+
+export interface Choice {
+  option_id: string;
+  reasoning: string;
+  decided_at: string;
+}
+
+export interface Review {
+  verdict: {
+    final_option: string;
+    challenges: { question: string; response: string }[];
+    opinion: string;
+  };
+  /** Whether the developer settled on the recommendation. */
+  agrees: boolean;
+  adr_path: string | null;
+  reviewed_at: string;
+}
+
+export interface DecisionState {
+  question: string;
+  mode: DecisionMode;
+  criteria: Criterion[];
+  options: Candidate[];
+  /** Null in an open lesson until the review is done. */
+  recommendation: Recommendation | null;
+  choice: Choice | null;
+  review: Review | null;
 }
 
 export interface QuizQuestion {
@@ -273,6 +344,9 @@ export const api = {
   lesson: (id: string) => request<LessonDetail>(`/api/lessons/${encodeURIComponent(id)}`),
   deleteLesson: (id: string) => request<void>(lessonPath(id), send("DELETE"), "text"),
   decisions: (id: string) => request<Decisions>(`/api/lessons/${encodeURIComponent(id)}/decisions`),
+  decision: (id: string) => request<DecisionState>(lessonPath(id, "/decision")),
+  saveChoice: (id: string, optionId: string, reasoning: string) =>
+    request<Choice>(lessonPath(id, "/choice"), send("PUT", { option_id: optionId, reasoning })),
   text: (id: string, path: string) => request<string>(fileUrl(id, path), undefined, "text"),
   quiz: (id: string) => request<Quiz>(fileUrl(id, "quiz.json")),
   progress: () => request<Totals>("/api/progress"),

@@ -24,7 +24,7 @@ You need Python ≥ 3.11 and [Claude Code](https://claude.com/claude-code).
 pipx install synapto-hub        # or: uv tool install synapto-hub
 ```
 
-This installs the `synapto` command. Next, add the Claude Code plugin, which provides the `/debrief` skill. Run these inside Claude Code:
+This installs the `synapto` command. Next, add the Claude Code plugin, which provides the `/debrief` and `/decide` skills. Run these inside Claude Code:
 
 ```
 /plugin marketplace add rick-scheper/synapto
@@ -40,12 +40,20 @@ Your project's venv needs `ipykernel` and `pytest`. `synapto doctor` checks for 
 3. The agent writes the lesson, checks it with `synapto validate` and publishes it with `synapto publish`. It then gives you the lesson URL.
 4. Start the hub with `synapto serve --open`. It serves on http://127.0.0.1:8765.
 
+### Before you build: `/decide`
+
+Facing a choice before any code exists, such as which database to use? Type `/decide "which database fits this project?"`, optionally followed by the candidates you have in mind. The agent researches the strongest candidates and publishes a **decision lesson**: an explanation of the problem space, the options compared on criteria that matter for your project, and a quiz.
+
+- `/decide guided "…"`: the lesson leads you to the agent's recommendation.
+- `/decide open "…"`: you make the call. Pick an option on the lesson's Options tab and write down why, then run `/decide review <lesson id>`. The agent challenges your reasoning in Claude Code, and the hub then shows its verdict next to the recommendation it wrote down *before* you chose. At the end it offers to record the decision as an ADR in your project.
+
 | Command | What it does |
 |---|---|
 | `synapto serve [--open] [--port N] [--reload]` | Start the hub on 127.0.0.1; `--reload` restarts a hub that's already running |
 | `synapto doctor [--python PATH]` | Check that a project interpreter can run lessons |
 | `synapto validate <bundle>` | Check a lesson bundle: it runs the notebook, and checks that the tests pass on the solution and fail on the stub |
 | `synapto publish <bundle> [--force]` | Validate a bundle and add it to your library |
+| `synapto decision show <id>` / `synapto decision verdict <id> <file>` | Read and store the review of an open decision (used by `/decide review`) |
 | `synapto remove <id> [--yes]` | Delete a lesson and your progress in it (or use **Delete lesson** in the hub) |
 
 Lessons and your progress live in `~/.synapto` (override with `SYNAPTO_HOME`).
