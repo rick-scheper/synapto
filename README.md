@@ -12,9 +12,7 @@ After Claude Code has built something, run `/debrief`. The agent writes a lesson
 - **Quiz:** check that you understood it.
 - **Rebuild:** rewrite the key functions from a stub until the tests pass.
 
-<!-- Demo GIF: record docs/demo.gif (see "Recording the demo" below), then uncomment:
-<p align="center"><img src="https://raw.githubusercontent.com/rick-scheper/synapto/main/docs/demo.gif" alt="Running /debrief and opening the lesson" width="800"></p>
--->
+<p align="center"><img src="https://raw.githubusercontent.com/rick-scheper/synapto/main/docs/demo.gif" alt="A lesson in the hub: Explain with a diagram, Decisions, a Notebook run, and a Rebuild exercise going from failing to passing tests" width="720"></p>
 
 ## Install
 
@@ -90,7 +88,7 @@ The `release` workflow builds the UI, runs the tests and builds the wheel. It ch
 
 ### Recording the demo
 
-`docs/demo.gif` is about 20–30 s at 800 px wide. It shows: `/debrief` finishing in Claude Code with a `Lesson URL:` → the Library → Explain → running a Notebook cell → a passing Rebuild test run.
+`docs/demo.gif` is about 35 s at 720 px wide and under 10 MB. It shows the Library → Explain with a diagram → Decisions → a Notebook run → a Rebuild exercise going from failing to passing tests.
 
 ## License
 
