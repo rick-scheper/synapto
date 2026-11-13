@@ -18,10 +18,10 @@ After Claude Code has built something, run `/debrief`. The agent writes a lesson
 
 ## Install
 
-You need Python ≥ 3.11 and [Claude Code](https://claude.com/claude-code).
+You need [uv](https://docs.astral.sh/uv/), Python ≥ 3.11 and [Claude Code](https://claude.com/claude-code).
 
 ```sh
-pipx install synapto-hub        # or: uv tool install synapto-hub
+uv tool install synapto-hub
 ```
 
 This installs the `synapto` command. Next, add the Claude Code plugin, which provides the `/debrief` and `/decide` skills. Run these inside Claude Code:

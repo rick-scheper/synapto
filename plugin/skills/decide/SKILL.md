@@ -11,7 +11,7 @@ Write a **decision lesson**: a lesson about a choice the developer faces *before
 
 Arguments: `$ARGUMENTS`
 
-Before anything else, run `synapto --help`. If the command is missing, tell the developer to install it (`pipx install synapto-hub`) and stop.
+Before anything else, run `synapto --help`. If the command is missing, tell the developer to install it (`uv tool install synapto-hub`) and stop.
 
 If the arguments start with `review`, read [review.md](review.md) and follow it instead of the steps below.
 

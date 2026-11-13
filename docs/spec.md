@@ -27,7 +27,7 @@ Synapto also teaches choices *before* anything is built ([ADR-0008](adr/0008-dec
 - A lesson is generated with one command, after the build, from the actual diff and conversation.
 - Every lesson is validated before it is published: all notebook cells run and all exercises are gradeable.
 - Code runs in the project's own Python environment, so real dependencies and real data work.
-- Installation is a single command (`pipx install synapto-hub`) plus a Claude Code plugin.
+- Installation is a single command (`uv tool install synapto-hub`) plus a Claude Code plugin.
 
 ### Non-goals (v1)
 

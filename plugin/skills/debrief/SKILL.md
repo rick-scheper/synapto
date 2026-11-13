@@ -11,7 +11,7 @@ Write a **lesson** about the code built in this session, so the developer — th
 
 Arguments: `$ARGUMENTS`
 
-Before step 1, run `synapto --help`. If the command is missing, tell the developer to install it (`pipx install synapto-hub`) and stop.
+Before step 1, run `synapto --help`. If the command is missing, tell the developer to install it (`uv tool install synapto-hub`) and stop.
 
 ## 1. Scope
 
