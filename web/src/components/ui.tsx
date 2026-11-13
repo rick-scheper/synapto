@@ -77,32 +77,6 @@ export function Badge({
   );
 }
 
-export interface TabItem {
-  id: string;
-  label: string;
-  count?: number;
-}
-
-export function Tabs({ items, value, onChange }: { items: TabItem[]; value: string; onChange: (id: string) => void }) {
-  return (
-    <div className="sy-tabs" role="tablist">
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          role="tab"
-          aria-selected={item.id === value}
-          className={cx("sy-tab", item.id === value && "is-active")}
-          onClick={() => onChange(item.id)}
-        >
-          {item.label}
-          {item.count != null && <span className="sy-tab-count">{item.count}</span>}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function TextField({
   label,
   value,

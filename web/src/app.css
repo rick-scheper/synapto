@@ -58,7 +58,6 @@ a:hover { color: var(--glow); }
 
 /* --- Pages -------------------------------------------------------------------- */
 .page { max-width: var(--page-max); margin: 0 auto; padding: var(--space-7) var(--space-6) var(--space-8); display: flex; flex-direction: column; gap: 40px; }
-.page.lesson { padding-top: var(--space-6); gap: var(--space-5); }
 .back-link { font-size: 13px; font-weight: 500; text-decoration: none; color: var(--ink-muted); display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; }
 .back-link:hover { color: var(--ink); }
 
@@ -84,14 +83,69 @@ a:hover { color: var(--glow); }
 .logo-tile img { width: 220px; height: auto; display: block; }
 
 /* Lesson */
-.lesson-head { display: flex; gap: var(--space-5); align-items: flex-start; flex-wrap: wrap; }
-.lesson-head-main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
-.lesson-progress { display: flex; align-items: center; gap: var(--space-3); padding-top: var(--space-2); }
-.lesson-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-3); }
+/* The header is a flight plan: the parts are waypoints on a route. Once it
+   scrolls away, a fixed strip (--route-strip high) shows the route instead. */
+.lesson { --route-strip: 48px; }
+.lesson .sidebar { top: calc(var(--header-height) + var(--route-strip) + var(--space-5)); }
+.lesson .prose h2 { scroll-margin-top: calc(var(--header-height) + var(--route-strip) + var(--space-5)); }
+.lesson .sy-cell { scroll-margin-top: calc(var(--header-height) + var(--route-strip) + 64px); }
+.lesson .nb-sidebar { max-height: calc(100vh - var(--header-height) - var(--route-strip) - var(--space-6)); }
+.lesson-body { padding-top: var(--space-6); }
+.flight-plan { border-bottom: 1px solid var(--line); background:
+  repeating-linear-gradient(90deg, color-mix(in srgb, var(--line) 35%, transparent) 0 1px, transparent 1px 48px),
+  radial-gradient(ellipse at 50% 120%, var(--accent-soft), var(--surface-sunken) 70%); }
+.flight-plan-inner { max-width: var(--page-max); margin: 0 auto; padding: var(--space-5) var(--space-6); display: flex; flex-direction: column; gap: var(--space-5); }
+.flight-plan-row { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+.flight-plan-title { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-5); }
+.lesson-title { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .lesson-delete { align-items: flex-end; }
 .lesson-delete .danger { color: var(--danger); }
-.changed-files { margin: var(--space-1) 0 0; padding-left: 18px; }
-.tab-body { padding-top: var(--space-4); }
+
+.status-lights { display: flex; gap: 6px; flex-wrap: wrap; }
+.status-light { font: 600 10px/14px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-sunken); color: var(--ink-muted); opacity: .45; white-space: nowrap; }
+.status-light:not(.is-off) { opacity: 1; }
+.status-light.is-warning { color: var(--warning); background: var(--warning-soft); border-color: var(--warning); box-shadow: 0 0 10px color-mix(in srgb, var(--warning) 40%, transparent); }
+.status-light.is-danger { color: var(--danger); background: var(--danger-soft); border-color: var(--danger); box-shadow: 0 0 10px color-mix(in srgb, var(--danger) 40%, transparent); }
+.status-light.is-info { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.status-light.is-success { color: var(--success); background: var(--success-soft); border-color: var(--success); box-shadow: 0 0 10px color-mix(in srgb, var(--success) 40%, transparent); }
+
+.source-line { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); font: 12px/18px var(--font-mono); }
+.source-line > div { display: flex; gap: 6px; }
+.source-line dt { color: var(--ink-muted); text-transform: uppercase; letter-spacing: .08em; }
+.source-line dd { margin: 0; color: var(--ink); }
+.changed-files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 120px; overflow: auto; }
+.changed-files .warning { color: var(--warning); }
+.changed-files .danger { color: var(--danger); }
+
+.part-route { list-style: none; margin: 0; padding: 0; display: grid; }
+.waypoint { position: relative; display: flex; justify-content: center; }
+.waypoint > button { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); background: none; border: 0; padding: 0; color: var(--ink-muted); cursor: pointer; font: inherit; border-radius: var(--radius-md); }
+.waypoint-node { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-sunken); border: 1.5px solid var(--line-strong); color: var(--ink-muted); transition: transform .15s; }
+.waypoint > button:hover .waypoint-node { transform: scale(1.08); color: var(--ink); }
+.waypoint.is-partial .waypoint-node { border-color: var(--warning); color: var(--warning); }
+.waypoint.is-done .waypoint-node { border-color: var(--success); color: var(--success); background: var(--success-soft); }
+.waypoint.is-here .waypoint-node { width: 48px; height: 48px; margin: -6px 0; border: 2px solid var(--accent); color: var(--on-accent); background: var(--accent); box-shadow: var(--shadow-glow); }
+.waypoint.is-here .waypoint-node svg { transform: rotate(45deg); }
+.waypoint-text { display: flex; flex-direction: column; align-items: center; }
+.waypoint-code { font: 600 10px/14px var(--font-mono); letter-spacing: .14em; }
+.waypoint-label { font: 600 14px/20px var(--font-display); color: var(--ink); }
+.waypoint-reading { font: 11px/16px var(--font-mono); text-transform: uppercase; }
+.waypoint.is-here .waypoint-code { color: var(--accent); }
+.route-leg { position: absolute; top: 17px; right: 50%; width: 100%; height: 2px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px); }
+.route-leg.is-done { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.route-leg.is-partial { background: repeating-linear-gradient(90deg, var(--warning) 0 6px, transparent 6px 12px); }
+.part-route.is-mini { width: min(420px, 50vw); }
+.part-route.is-mini .waypoint-node { width: 20px; height: 20px; border-width: 1px; }
+.part-route.is-mini .waypoint.is-here .waypoint-node { width: 24px; height: 24px; margin: -2px 0; }
+.part-route.is-mini .route-leg { top: 9px; }
+
+.route-strip { position: fixed; top: var(--header-height); left: 0; right: 0; z-index: 9; height: var(--route-strip); display: flex; align-items: center; gap: var(--space-5); padding: 0 max(var(--space-6), calc((100vw - var(--page-max)) / 2 + var(--space-6))); background: color-mix(in srgb, var(--surface-sunken) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); transform: translateY(-110%); opacity: 0; transition: transform .2s, opacity .2s; }
+.route-strip.is-shown { transform: none; opacity: 1; }
+.route-strip-title { font: 600 14px/20px var(--font-display); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.next-part { align-self: stretch; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: var(--space-5); border-radius: var(--radius-lg); border: 1px dashed var(--line-strong); background: none; color: var(--ink); cursor: pointer; font: inherit; }
+.next-part:hover { border-style: solid; border-color: var(--accent); box-shadow: var(--shadow-glow); }
+.next-part .h-card { display: inline-flex; align-items: center; gap: var(--space-2); }
+@media (prefers-reduced-motion: reduce) { .route-strip, .waypoint-node { transition: none; } }
 .with-sidebar { display: flex; gap: var(--space-7); align-items: flex-start; }
 .sidebar { flex: 0 0 var(--sidebar-width); position: sticky; top: calc(var(--header-height) + var(--space-5)); }
 .reading { flex: 1 1 auto; min-width: 0; max-width: var(--reading-width); }
@@ -210,6 +264,12 @@ a:hover { color: var(--glow); }
   .notebook { width: 100%; }
   .nb-outline { display: none; }
   .card-grid { grid-template-columns: 1fr; }
+  .flight-plan-inner { padding: var(--space-5) var(--space-4); }
+  .flight-plan-title { flex-direction: column; align-items: flex-start; }
+  .waypoint:not(.is-here) .waypoint-text { display: none; }
+  .route-strip { padding: 0 var(--space-4); }
+  .route-strip-title { display: none; }
+  .part-route.is-mini { width: 100%; }
 }
 
 /* Decision lessons: Options tab (ADR-0008) */

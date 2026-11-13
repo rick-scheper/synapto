@@ -517,7 +517,7 @@ Published bundles are immutable. Everything the learner changes lives in SQLite,
 Pages:
 
 - **Library:** lesson cards grouped by repo, with concept filters, progress rings and a staleness badge. Decision lessons carry a "Decision" badge, and those without a repo are grouped under "Not yet built".
-- **Lesson**, with a tab for each of its parts and a "Delete lesson" button (with confirmation). A lesson without a quiz or exercises shows no progress. In an open decision lesson, the review counts as one more item to complete.
+- **Lesson**, under a "flight plan" header: status lights (stale, repo missing, uncommitted changes, complete), the source, and a route with a waypoint for each of its parts that shows how far along each part is. Once the header scrolls away, a slim strip keeps the route in view, and each part ends with a button to the next one. The header also has a "Delete lesson" button (with confirmation). A lesson without a quiz or exercises shows no progress. In an open decision lesson, the review counts as one more item to complete.
   - **Explain:** rendered Markdown and Mermaid. Code references link to notebook cells.
   - **Decisions:** one card per decision, each with a "Revisit" button.
   - **Notebook:** cells with run, run-all, restart and reset buttons; a data slot panel with file path inputs; and rich outputs (text, tables, images and Plotly where present).

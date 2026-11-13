@@ -23,15 +23,6 @@
 .sy-badge-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
 .sy-badge-danger { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
 
-/* Tabs */
-.sy-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
-.sy-tab { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; height: 40px; padding: 0 var(--space-3); background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--ink-muted); cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-2); }
-.sy-tab:hover { color: var(--ink); }
-.sy-tab.is-active { color: var(--ink); border-bottom-color: var(--accent); }
-.sy-tab:focus-visible { outline: none; box-shadow: var(--shadow-focus); border-radius: var(--radius-sm); }
-.sy-tab-count { font-size: 12px; line-height: 18px; padding: 0 6px; border-radius: var(--radius-full); background: var(--surface-sunken); color: var(--ink-muted); }
-.sy-tab.is-active .sy-tab-count { background: var(--accent-soft); color: var(--accent); }
-
 /* TextField */
 .sy-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 260px; }
 .sy-field-label { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink); }
