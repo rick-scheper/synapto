@@ -27,7 +27,6 @@ import json
 import re
 import shutil
 import subprocess
-import tempfile
 import textwrap
 import time
 from collections.abc import Sequence
@@ -69,6 +68,8 @@ _TRACEBACK_LINES = 20
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 _DIAGRAM_REF = re.compile(r"\]\(\s*<?(diagrams/[^)\s>]+)|src=[\"'](diagrams/[^\"']+)")
+# Built by `npm run build` in web/ from the Mermaid the hub renders with.
+MERMAID_CHECKER = Path(__file__).resolve().parent.parent / "web" / "mermaid-check.mjs"
 _MERMAID = re.compile(r"^```mermaid[ \t]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
 
 M = TypeVar("M", bound=BaseModel)
@@ -130,6 +131,32 @@ def pydantic_message(err: Any) -> str:
     if kind != "json_invalid" and (value is None or isinstance(value, (str, int, float, bool))):
         return f"{msg} (got {json.dumps(value)})"
     return msg
+
+
+class MermaidUnchecked(Exception):
+    """Why Mermaid blocks could not be checked."""
+
+
+def parse_mermaid(sources: list[str]) -> list[str | None]:
+    """Parse each Mermaid source with the hub's own Mermaid, run in Node.
+
+    Returns, per source, None when it parses or Mermaid's error message when it
+    doesn't. Raises MermaidUnchecked when Node or the checker is missing.
+    """
+    node = shutil.which("node")
+    if node is None:
+        raise MermaidUnchecked("node is not on PATH")
+    if not MERMAID_CHECKER.is_file():
+        raise MermaidUnchecked(f"{MERMAID_CHECKER} is missing; run `npm run build` in web/")
+    try:
+        proc = subprocess.run([node, str(MERMAID_CHECKER)], input=json.dumps(sources),
+                              capture_output=True, text=True, encoding="utf-8", timeout=60)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise MermaidUnchecked(str(exc)) from exc
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout).strip().splitlines()
+        raise MermaidUnchecked(f"the checker failed: {detail[0] if detail else proc.returncode}")
+    return json.loads(proc.stdout)
 
 
 def _indent(text: str) -> str:
@@ -364,24 +391,18 @@ class _Validator:
         self.check_mermaid(name, text)
 
     def check_mermaid(self, name: str, text: str) -> None:
-        mmdc = shutil.which("mmdc")
-        if mmdc is None:
+        blocks = list(_MERMAID.finditer(text))
+        if not blocks:
             return
-        with tempfile.TemporaryDirectory(prefix="synapto-mmd-") as tmp:
-            for match in _MERMAID.finditer(text):
-                lineno = text.count("\n", 0, match.start()) + 1
-                src, out = Path(tmp) / "block.mmd", Path(tmp) / "block.svg"
-                src.write_text(match[1], encoding="utf-8")
-                try:
-                    proc = subprocess.run([mmdc, "-q", "-i", str(src), "-o", str(out)],
-                                          capture_output=True, text=True, timeout=60)
-                except (OSError, subprocess.TimeoutExpired) as exc:
-                    self.warn(name, str(lineno), f"could not check Mermaid block: {exc}")
-                    return
-                if proc.returncode != 0:
-                    detail = (proc.stderr or proc.stdout).strip().splitlines()[:3]
-                    self.warn(name, str(lineno), "Mermaid block does not parse:\n"
-                              + _indent("\n".join(detail)))
+        try:
+            results = parse_mermaid([block[1] for block in blocks])
+        except MermaidUnchecked as exc:
+            self.warn(name, None, f"Mermaid blocks not checked: {exc}")
+            return
+        for block, error in zip(blocks, results):
+            if error is not None:
+                lineno = text.count("\n", 0, block.start()) + 1
+                self.warn(name, str(lineno), "Mermaid block does not parse:\n" + _indent(error))
 
     def check_dissection(self, cells: list[tuple[int, Any, CellMeta]]) -> None:
         """Each function cell defines its function and is followed by a demo cell."""

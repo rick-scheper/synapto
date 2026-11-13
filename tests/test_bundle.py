@@ -7,16 +7,14 @@ copies both to a temp dir (the ``bundle`` fixture in conftest) and points
 """
 
 import json
-import os
 import shutil
-import stat
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
 
-from synapto.bundle.validator import validate_bundle
+from synapto.bundle.validator import MERMAID_CHECKER, validate_bundle
 from synapto.cli import app
 
 
@@ -267,21 +265,29 @@ def test_not_a_directory(tmp_path: Path) -> None:
     assert [str(i) for i in report.issues] == [f"{tmp_path / 'nope'}: bundle is not a directory"]
 
 
-def test_mermaid_parse_errors_are_warnings(bundle: Path, tmp_path: Path, monkeypatch) -> None:
-    # A stand-in for mmdc that rejects any diagram containing BROKEN.
-    fake = tmp_path / "bin" / "mmdc"
-    fake.parent.mkdir()
-    fake.write_text('#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = -i ] && f=$2; shift; done\n'
-                    'grep -q BROKEN "$f" && { echo "Parse error on line 2" >&2; exit 1; }\nexit 0\n')
-    fake.chmod(fake.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("PATH", f"{fake.parent}{os.pathsep}{os.environ['PATH']}")
+needs_mermaid_checker = pytest.mark.skipif(
+    shutil.which("node") is None or not MERMAID_CHECKER.is_file(),
+    reason="needs node and the Mermaid checker (npm run build in web/)",
+)
 
+
+@needs_mermaid_checker
+def test_mermaid_parse_errors_are_warnings(bundle: Path) -> None:
     assert messages(bundle) == []
-    edit_text(bundle / "explanation.md", "flowchart LR", "flowchart LR\n    BROKEN -->")
+    # A | in an unquoted label is the mistake that slipped through to a real lesson.
+    edit_text(bundle / "explanation.md", "flowchart LR", "flowchart LR\n    H[fmix32 | 1]")
     report = validate_bundle(bundle, execute=False)
     assert report.ok
-    assert [str(w) for w in report.warnings] == [
-        "explanation.md:21: warning: Mermaid block does not parse:\n    Parse error on line 2"
+    [warning] = [str(w) for w in report.warnings]
+    assert warning.startswith("explanation.md:21: warning: Mermaid block does not parse:\n"
+                              "    Parse error on line 2:"), warning
+    assert "got 'PIPE'" in warning
+
+
+def test_mermaid_without_node_is_a_warning(bundle: Path, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("PATH", str(tmp_path / "empty"))
+    assert messages(bundle) == [
+        "explanation.md: warning: Mermaid blocks not checked: node is not on PATH"
     ]
 
 

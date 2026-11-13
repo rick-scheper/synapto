@@ -26,8 +26,10 @@ jobs:
         run: uv run pytest -q
       - name: Build the wheel and sdist
         run: uv build
-      - name: Check the wheel ships the web UI
-        run: unzip -l dist/*.whl | grep -q 'synapto/web/index.html'
+      - name: Check the wheel ships the web UI and the Mermaid checker
+        run: |
+          unzip -l dist/*.whl | grep -q 'synapto/web/index.html'
+          unzip -l dist/*.whl | grep -q 'synapto/web/mermaid-check.mjs'
       - name: Check the tag matches the version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |

@@ -21,6 +21,9 @@ export function Mermaid({ code }: { code: string }) {
       mermaid.initialize({
         startOnLoad: false,
         securityLevel: "strict",
+        // We show our own fallback on failure; without this Mermaid also
+        // appends a "Syntax error in text" SVG to <body> and leaves it there.
+        suppressErrorRendering: true,
         theme: "base",
         fontFamily: token("--font-sans"),
         themeVariables: {

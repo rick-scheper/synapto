@@ -75,7 +75,7 @@ The UI is a React + Vite app in `web/` ([ADR-0005](docs/adr/0005-frontend-react-
 
 ```sh
 cd web && npm install
-npm run build        # writes the app to src/synapto/web/, which `synapto serve` serves and the wheel ships
+npm run build        # writes the app (which `synapto serve` serves) and the validator's Mermaid checker to src/synapto/web/; the wheel ships both
 npm run dev          # hot-reloading UI on :5173; proxies /api to a running `synapto serve`
 ```
 

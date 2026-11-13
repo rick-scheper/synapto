@@ -434,7 +434,7 @@ Also checked, because they make errors easier to act on:
 - **Markdown:** `explanation.md` and `decisions.md` aren't empty.
 - **Decision lessons:** `options.json` matches §5.7, and `parts` holds only `explain`, `options` and `quiz`.
 
-Warnings (they don't fail validation): a Mermaid block fails to parse (checked if `mmdc` is installed), a cell takes more than 30 seconds to run, or a single test passes against `stub.py` (while others fail).
+Warnings (they don't fail validation): a Mermaid block fails to parse (checked with the hub's own Mermaid, run in Node; without `node` on PATH the blocks go unchecked, which is itself a warning), a cell takes more than 30 seconds to run, or a single test passes against `stub.py` (while others fail).
 
 The validator reports every issue it can find in one run. Cells run in order and execution stops at the first failing cell. The notebook and exercises run only when `lesson.json` is valid and its environment is usable; otherwise the CLI says they were skipped.
 
